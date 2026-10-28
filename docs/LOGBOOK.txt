@@ -1,77 +1,8 @@
-================================================================================
-LOGBOOK: WinNotch (Marditch) - Ambient Awareness Companion
-================================================================================
-Tanggal Mulai : 2026-10-28
-Status        : Phase 0 (Spike) - In Progress
-Proyek        : WinNotch Backend (Tauri v2 + Rust) + Frontend (Vanilla HTML/CSS/JS)
-Versi Dokumen : 1.0
 
 ================================================================================
-PHASE 0 - PROMPT 1: Environment Check & Project Init
+EMERGENCY FIX - Rollback to Safe Mode
 ================================================================================
-Status: SELESAI (menunggu user commit)
-
+Status: SELESAI
 Apa yang dilakukan:
-1. Verifikasi environment prerequisites di WSL dan Windows:
-   - Rust, Cargo, Node, npm
-   - VS Build Tools C++ workload
-   - WebView2 Runtime
-2. Inisialisasi npm project (package.json).
-3. Install Tauri v2 dependencies (@tauri-apps/cli, @tauri-apps/api)
-   via PowerShell (butuh Windows binary).
-4. Scaffold Tauri project (src-tauri/ dengan Cargo.toml + tauri.conf.json).
-5. Buat folder structure minimal:
-   - src/ (frontend placeholder: index.html, styles.css, main.js)
-   - src-tauri/src/ (Rust module stubs: smtc, hit_test, foreground,
-     fullscreen, wsl_hook, commands)
-6. Git init + .gitignore + README skeleton.
-7. Buat LOGBOOK.txt dan TECHNICAL DEBT.txt.
-
-Hasil Verifikasi:
-- Environment check: OK (semua tool ter-install)
-- npm install Tauri deps: OK
-- tauri init: OK (src-tauri/ ter-scaffold)
-- Folder structure: OK
-- Git init: OK (.git/ terbuat, .gitignore + README ready)
-
-Catatan:
-- Prompt berikutnya (Prompt 2) akan implementasi E2: base window transparan.
-- Smoke test (cargo tauri dev) dilakukan manual oleh user setelah prompt.
-- Commit & push dilakukan oleh user via PowerShell (per TEAM_CONTRACT R10).
-
-Referensi:
-- docs/ROADMAP FASE 0.txt (E1-S1-T1 sampai T5)
-- docs/PRD.txt v1.3 (PART C §C1 Tech Stack)
-- docs/TEAM_CONTRACT.txt v1.0
-
-================================================================================
-PHASE 0 - PROMPT 2 (MEGA): E2 Base Window + E3 Hit-testing
-================================================================================
-Status: SELESAI (menunggu user verifikasi T8 & T12)
-
-Apa yang dilakukan:
-1. Window Tauri diperbesar (400x120) agar kapsul bisa berekspansi tanpa resize window.
-2. Config diset: transparent, frameless, always_on_top, focus false.
-3. Menambahkan crate `windows` (Win32) di Cargo.toml.
-4. Membuat `hit_test.rs` menggunakan Option A (Polling):
-   - Thread Rust berjalan setiap 16ms.
-   - Cek posisi kursor relatif terhadap area kapsul (180x32).
-   - Jika di luar kapsul -> click-through aktif.
-   - Jika di dalam kapsul -> click-through mati (bisa diklik).
-5. Frontend: Menambahkan tombol dummy untuk ngetes klik tembus.
-
-Catatan:
-- User wajib melakukan T8/T12 (Visual Check & Stress Test).
-
-================================================================================
-PHASE 0 - PROMPT 4 (GOD PROMPT): E4 s/d E10
-================================================================================
-Status: SELESAI (menunggu verifikasi menyeluruh)
-
-Apa yang dilakukan:
-1. E4: Integrasi SMTC (Read & Control) via WinRT. Menambahkan IPC command `media_control`.
-2. E5: CSS Marquee & Hover Animation.
-3. E6: Deteksi Fullscreen via Win32 GetWindowRect. Tray Menu (Show/Hide/Quit).
-4. E7: Foreground Tracking (mencetak judul window aktif).
-5. E8: WSL Hook Axum Server (port 9182) untuk menerima ping async.
-6. E9/E10: Membuat SPIKE_NOTES.md.
+1. Mematikan thread `hit_test` dan `fullscreen` di lib.rs karena menyebabkan crash.
+2. Menghapus JS Drag simulation di main.js yang konflik dengan window native.

@@ -13,20 +13,28 @@ html, body {
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 
-#capsule:hover { width: 320px; height: 80px; border-radius: 24px; }
+#capsule:hover, #capsule.pinned {
+  width: 320px; height: 80px; border-radius: 24px;
+}
+
 .collapsed-content { display: flex; width: 100%; overflow: hidden; justify-content: center; }
 .expanded-content { display: none; opacity: 0; flex-direction: column; align-items: center; }
-#capsule:hover .collapsed-content { display: none; }
-#capsule:hover .expanded-content { display: flex; opacity: 1; }
+
+#capsule:hover .collapsed-content, #capsule.pinned .collapsed-content { display: none; }
+#capsule:hover .expanded-content, #capsule.pinned .expanded-content { display: flex; opacity: 1; }
+
+#capsule.pinned::after {
+  content: '📍'; position: absolute; top: 8px; right: 12px; font-size: 12px;
+}
 
 .title { font-size: 13px; font-weight: 600; }
 .artist { font-size: 11px; color: #aaa; margin-bottom: 4px; }
 .controls { display: flex; gap: 16px; font-size: 16px; cursor: pointer; }
 .controls span:hover { color: #ff3b30; }
 
-/* Marquee Animation */
 .marquee-text {
   display: inline-block; white-space: nowrap;
   animation: marquee 1.5s linear infinite;

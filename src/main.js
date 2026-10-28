@@ -1,3 +1,24 @@
-// Tauri v2 injects __TAURI__ global if withGlobalTauri is true.
-// We will use it directly in HTML. No extra JS needed here for now.
-console.log("Frontend loaded.");
+let isPinned = false;
+const capsule = document.getElementById('capsule');
+
+// Logika Pin State (S4)
+window.togglePin = (event) => {
+  if (event.target.tagName === 'SPAN') return;
+  
+  isPinned = !isPinned;
+  if (isPinned) {
+    capsule.classList.add('pinned');
+  } else {
+    capsule.classList.remove('pinned');
+  }
+};
+
+// ESC untuk lepas pin
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isPinned) {
+    isPinned = false;
+    capsule.classList.remove('pinned');
+  }
+});
+
+console.log("Frontend loaded. Safe Mode Active.");
