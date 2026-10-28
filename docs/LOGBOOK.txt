@@ -6,3 +6,13 @@ Status: SELESAI
 Apa yang dilakukan:
 1. Mematikan thread `hit_test` dan `fullscreen` di lib.rs karena menyebabkan crash.
 2. Menghapus JS Drag simulation di main.js yang konflik dengan window native.
+
+================================================================================
+FASE 1 FINAL - Integrasi Data & Anti-Spam Log
+================================================================================
+Status: SELESAI
+Apa yang dilakukan:
+1. SMTC: Mengirim data lagu ke Frontend (event `smtc_update`).
+2. Foreground: Menerapkan debounce 2 detik agar log terminal tidak spam.
+3. Config: Posisi window disimpan saat CloseRequested.
+4. UI: Teks dummy dihapus, diganti listener event dari Rust.

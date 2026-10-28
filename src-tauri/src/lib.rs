@@ -41,7 +41,7 @@ pub fn run() {
             }
 
             // hit_test::start_polling(handle.clone()); // DISABLED
-            smtc::start_listening();
+            smtc::start_listening(handle.clone());
             // fullscreen::start_polling(handle.clone()); // DISABLED
             foreground::start_polling();
             wsl_hook::start_server();
@@ -65,6 +65,17 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![media_control, save_window_pos])
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                let app = window.app_handle();
+                let mut cfg = config::load_config(app);
+                if let Ok(pos) = window.outer_position() {
+                    cfg.window_x = Some(pos.x);
+                    cfg.window_y = Some(pos.y);
+                    config::save_config(app, &cfg);
+                }
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
