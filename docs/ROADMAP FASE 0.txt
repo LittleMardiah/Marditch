@@ -1,0 +1,1020 @@
+================================================================================
+ROADMAP FASE (0): PHASE 0 SPIKE — WinNotch (Ambient Awareness Companion)
+================================================================================
+
+Version:         1.0-FINAL
+Last Updated:    2026-10-28
+Author:          M. Arif Aulia
+Status:          NOT STARTED (Ready to Execute)
+Blueprint Ref:   PRD.txt v1.3 — PART D Section D1 (Phase 0 Spike)
+Project Path:    D:\AI Engineer\Notch\Windows\
+Team Contract:   TEAM_CONTRACT.txt v1.0 (adapted for WinNotch)
+Duration:        7 hari (kalau lancar; bisa stretch ke 10 hari kalau ada blocker)
+
+================================================================================
+BISMILLAH — PHASE 0 SPIKE FINAL VERSION
+================================================================================
+
+"Jangan hanya berpikir bahwa Sistem akhirnya bisa berjalan dengan Normal,
+ tapi berpikirlah apakah sistem juga bisa berjalan dengan Normal
+ di Situasi yang sedang 'Tidak Normal'"
+
+— Vibe Coder Principle
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+0. Cara Pakai Dokumen Ini
+1. Fase Identity
+2. Scope & Objectives
+3. Foundation Distillation (dari PRD v1.3)
+4. Task Breakdown (E1-E10, T1-T36)
+5. Deliverables
+6. Acceptance Criteria (Go/No-Go)
+7. Risks & Mitigations
+8. DoD (Definition of Done)
+9. Notes & References
+10. Version History
+
+================================================================================
+SECTION 0 — CARA PAKAI DOKUMEN INI
+================================================================================
+
+Workflow per task:
+
+1. User buka OpenCode di terminal WSL atau PowerShell, cd ke project root.
+2. User prompt:
+   "Baca D:\AI Engineer\Notch\Windows\docs\PRD.txt dan
+    D:\AI Engineer\Notch\Windows\docs\ROADMAP FASE 0.txt.
+    Ikuti TEAM_CONTRACT.txt (RULES).
+    Kerjakan E1-S1-T1."
+3. OpenCode eksekusi 1 task (max 5-7 command), paste RAW output.
+4. OpenCode self-review + lapor.
+5. User verifikasi (VERIFIKASI USER section di task).
+6. User commit via PowerShell (BUKAN WSL — credential issue).
+7. Lanjut task berikutnya.
+
+ATURAN KETAT:
+- 1 task = 1 prompt. Jangan batch.
+- Kalau OpenCode ragu -> STOP & LAPOR. Jangan paksa.
+- Kalau task gagal -> dokumentasi di SPIKE_NOTES.md, baru lanjut.
+- Kalau hit-testing (E3) gagal -> aktifkan fallback (lihat Section 2.4).
+
+================================================================================
+SECTION 1 — FASE IDENTITY
+================================================================================
+
+Fase ID:           PHASE 0 (Spike)
+Nama Fase:         Phase 0 Spike — Validate Riskiest Assumptions
+Fitur Utama:       Tidak ada fitur bisnis — murni validasi teknis
+Estimasi Durasi:   7 hari (kalau lancar; 10 hari kalau ada blocker)
+Dependencies:      None (fase pertama setelah scaffolding)
+Status:            NOT STARTED
+
+Ringkasan:
+  Phase 0 = spike, bukan build fitur. Tujuan: validasi 13 asumsi
+  teknis yang paling berisiko sebelum commit ke M1 (fondasi) + M2
+  (media lengkap) + M3 (async) + M4 (awareness).
+
+  Kalau Phase 0 gagal di titik tertentu (terutama hit-testing),
+  kita pivot atau scope down SEBELUM buang 8-12 minggu coding.
+
+  Tidak ada UI cantik di Phase 0. Kapsul cukup kotak hitam
+  transparan dengan teks "test". Yang penting: BEHAVIOR terbukti.
+
+  Deliverable akhir: SPIKE_NOTES.md dengan angka nyata (RAM, CPU,
+  latency, akurasi). Ini jadi portfolio evidence.
+
+================================================================================
+SECTION 2 — SCOPE & OBJECTIVES
+================================================================================
+
+2.1 SCOPE — IN
+--------------------------------------------------------------------------------
+
+Environment & scaffolding:
+   - Rust 1.75+, Node 20+, VS Build Tools C++ workload
+   - Tauri v2 project init
+   - Folder structure sesuai PRD v1.3 C1/C2
+   - Git repo + .gitignore + README skeleton
+
+13 Spike Tasks (dari PRD v1.3 Section D1):
+   - P0-S1: Base transparent window
+   - P0-S2: Hit-testing (Option A vs B)
+   - P0-S3: Hover animation timing
+   - P0-S4: SMTC read
+   - P0-S5: SMTC control
+   - P0-S6: Marquee Title Peek
+   - P0-S7: Fullscreen detection
+   - P0-S8: Tray icon + menu
+   - P0-S9: Foreground tracking (Win32)
+   - P0-S10: Title parsing accuracy
+   - P0-S11: WSL hook end-to-end
+   - P0-S12: RAM baseline
+   - P0-S13: CPU baseline
+
+Deliverables:
+   - Working prototype (bukan polished app)
+   - SPIKE_NOTES.md dengan semua angka nyata
+   - Decision: hit-testing Option A atau B
+   - Decision: Go (lanjut M1) atau No-Go (pivot/scope down)
+
+2.2 SCOPE — OUT
+--------------------------------------------------------------------------------
+
+TIDAK termasuk Phase 0:
+   - UI cantik (kapsul cukup kotak hitam + teks "test")
+   - Media metadata full display (cukup print ke console)
+   - Title Peek visual polish (cukup ada animasi)
+   - Config.json loading (hardcode untuk Phase 0)
+   - Tray gray-out, auto-hide polish (fungsional saja)
+   - WSL hook multi-task (cukup 1 task selesai -> notify)
+   - Awareness UI (Tiny Timer, summary card) — Phase 0 hanya VALIDASI
+     bahwa foreground tracking + title parsing bisa jalan
+
+2.3 OBJECTIVES (MEASURABLE)
+--------------------------------------------------------------------------------
+
+1. Tauri v2 project built & running di Windows 11
+2. Transparent frameless always-on-top window jalan
+3. Hit-testing region-based (capsule vs margin) jalan — Option A atau B
+4. SMTC read (title/artist/status) works dari Spotify + Edge
+5. SMTC control (play/pause/next/prev) works < 100ms
+6. Hover expand CSS < 80ms perceived, 60 FPS
+7. Marquee Title Peek 1.5s smooth, no glitch
+8. Fullscreen detection < 500ms hide, < 20% false positive
+9. Tray icon + 4 menu items (Show/Hide/Reload/Quit) works
+10. Foreground tracking (GetForegroundWindow) + title read works
+11. Title parsing akurasi >= 85% (test 20 session manual)
+12. WSL hook end-to-end < 500ms (bash -> notch notify)
+13. RAM < 100 MB idle, < 130 MB active
+14. CPU ~0% idle, < 3% during animation
+
+2.4 KILL CRITERIA & FALLBACK (dari PRD v1.3 Section D1)
+--------------------------------------------------------------------------------
+
+Kalau P0-S2 (hit-testing) GAGAL setelah 7 hari coba:
+-> Fallback: window seukuran kapsul, tanpa transparent margin.
+   Trade-off: tidak bisa pass-through margin, tapi app tetap fungsional.
+   Accept sebagai V1 limitation.
+
+Kalau P0-S11 (WSL hook) GAGAL:
+-> Drop F032/F033 dari scope. Fokus media + Tiny Timer saja.
+   Notch tetap berguna untuk 2 dari 3 masalah utama.
+
+Kalau P0-S10 (title parsing) < 85% akurasi:
+-> Tiny Timer tetap jalan (pakai heuristic), tapi dokumentasi jelas
+   "title parsing ~85%, bukan 100%. Browser extension = v1.1".
+
+Kalau RAM > 130 MB stable:
+-> Drop F023 (marquee) dari scope. Title Peek jadi static highlight 200ms.
+
+================================================================================
+SECTION 3 — FOUNDATION DISTILLATION
+================================================================================
+
+Self-contained untuk Phase 0. Tidak perlu buka PRD v1.3 utuh
+(kecuali butuh konteks fitur).
+
+3.1 ENVIRONMENT PREREQUISITES
+--------------------------------------------------------------------------------
+
+WAJIB terinstall sebelum mulai:
+
+  Tool              | Version    | Check command
+  ------------------|------------|----------------------------------
+  Rust              | >= 1.75    | rustc --version
+  Cargo             | (bundled)  | cargo --version
+  Node.js           | >= 20 LTS  | node --version
+  npm               | (bundled)  | npm --version
+  VS Build Tools    | 2022       | vswhere -products *
+    - C++ workload  |            | requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64
+  WebView2 Runtime  | Any recent | (default di Win 10/11)
+  Git               | Any        | git --version
+
+Kalau ada yang missing -> install dulu SEBELUM lanjut.
+
+3.2 TECH STACK DECISION (LOCKED — dari PRD v1.3 Section C1)
+--------------------------------------------------------------------------------
+
+- Framework: Tauri v2
+- Frontend: Vanilla HTML/CSS/JS (bukan React/Vue)
+- Rust crates wajib:
+  - tauri = "2"
+  - windows = "0.58" (WinRT SMTC + Win32 hit-testing)
+  - tray-icon = "0.19"
+  - serde + serde_json
+  - tokio (bundled Tauri)
+  - axum = "0.7" (WSL hook HTTP server — ringan)
+- Build tool frontend: Vite (Tauri default)
+
+3.3 PROJECT STRUCTURE
+--------------------------------------------------------------------------------
+
+D:\AI Engineer\Notch\Windows\
+├── docs\
+│   ├── PRD.txt
+│   ├── ROADMAP FASE 0.txt
+│   ├── SPIKE_NOTES.md
+│   └── TEAM_CONTRACT.txt
+├── src-tauri\
+│   ├── src\
+│   │   ├── main.rs
+│   │   ├── lib.rs
+│   │   ├── smtc.rs             (SMTC adapter)
+│   │   ├── hit_test.rs         (Win32 WM_NCHITTEST)
+│   │   ├── foreground.rs       (GetForegroundWindow)
+│   │   ├── fullscreen.rs       (detector)
+│   │   ├── wsl_hook.rs         (HTTP listener)
+│   │   └── commands.rs         (IPC commands)
+│   ├── Cargo.toml
+│   ├── tauri.conf.json
+│   └── build.rs
+├── src\
+│   ├── index.html              (placeholder UI)
+│   ├── main.js
+│   └── styles.css
+├── package.json
+├── vite.config.js
+├── .gitignore
+└── README.md
+
+3.4 REFERENCE FITUR (dari PRD v1.3 Section A5)
+--------------------------------------------------------------------------------
+
+Phase 0 validasi 13 spike. Mapping:
+
+  Spike  | Validasi untuk fitur
+  -------|-------------------------------------------------------
+  P0-S1  | F001 (capsule window)
+  P0-S2  | F001 (hit-testing margin pass-through)
+  P0-S3  | F002 (hover expand)
+  P0-S4  | F003 (SMTC read)
+  P0-S5  | F003 (SMTC control)
+  P0-S6  | F023 (Title Peek marquee)
+  P0-S7  | F008 (fullscreen auto-hide)
+  P0-S8  | F007 (tray lifecycle)
+  P0-S9  | F030 (foreground tracking)
+  P0-S10 | F034 (Tiny Timer title parsing)
+  P0-S11 | F032 (WSL async notify)
+  P0-S12 | (NFR — RAM)
+  P0-S13 | (NFR — CPU)
+
+Kalau salah satu spike gagal -> fitur terkait di-drop atau di-scope down.
+
+================================================================================
+SECTION 4 — TASK BREAKDOWN
+================================================================================
+
+10 epics, 36 tasks. Estimasi total ~50 jam (7 hari efektif dengan buffer).
+
+Setiap task <= 1 jam (kecuali disebutkan). Format:
+- Deliverable
+- DoD (Definition of Done)
+- Verification (command user cek manual)
+
+Untuk prompt OpenCode, referensi cukup: "Kerjakan [TASK ID] dari ROADMAP
+FASE 0.txt. Baca deliverable + DoD + verification di task tsb."
+
+--------------------------------------------------------------------------------
+EPIC E1: ENVIRONMENT & SCAFFOLDING (5 tasks, ~3 jam)
+--------------------------------------------------------------------------------
+
+E1-S1-T1 [15 min] — Environment check
+   Deliverable: paste output versi tool
+   DoD: Rust >= 1.75, Node >= 20, VS Build Tools C++ workload installed
+   Verification:
+     rustc --version
+     cargo --version
+     node --version
+     npm --version
+     vswhere -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64
+   STOP kalau ada yang missing -> install dulu.
+
+E1-S1-T2 [30 min] — Init Tauri v2 project
+   Deliverable: Tauri project di D:\AI Engineer\Notch\Windows\
+   DoD: `npm create tauri-app@latest` (atau manual init) -> package.json + src-tauri/ ada
+   Verification:
+     ls -la
+     cat src-tauri/Cargo.toml
+     cat package.json
+   Catatan: pilih vanilla + TypeScript, tidak perlu framework UI.
+
+E1-S1-T3 [30 min] — Setup folder structure sesuai PRD
+   Deliverable: folder src-tauri/src/{smtc.rs, hit_test.rs, foreground.rs,
+                fullscreen.rs, wsl_hook.rs, commands.rs} + src/{index.html, main.js, styles.css}
+   DoD: struktur folder sesuai Section 3.3
+   Verification:
+     tree -L 3 (atau ls -R)
+     Pastikan semua file ada (empty boleh, `echo "" > file`)
+
+E1-S1-T4 [15 min] — Git init + .gitignore + README skeleton
+   Deliverable: git repo + .gitignore + README.md minimal
+   DoD: `git status` clean, .gitignore exclude: target/, node_modules/, dist/, .env
+   Verification:
+     git status
+     cat .gitignore
+     git log --oneline (initial commit ada)
+
+E1-S1-T5 [15 min] — Verify `cargo tauri dev` runs
+   Deliverable: dev build jalan tanpa error
+   DoD: window default Tauri muncul (bukan transparan dulu — itu E2)
+   Verification:
+     cargo tauri dev
+     -> window default muncul, close window
+     Screenshot atau paste log
+   STOP kalau compile error -> fix dulu sebelum lanjut.
+
+--------------------------------------------------------------------------------
+EPIC E2: BASE WINDOW — P0-S1 (3 tasks, ~2 jam)
+--------------------------------------------------------------------------------
+
+E2-S1-T6 [45 min] — tauri.conf.json config
+   Deliverable: config window transparent + frameless + always-on-top + skip-taskbar
+   DoD: edit src-tauri/tauri.conf.json, set:
+     {
+       "windows": [{
+         "decorations": false,
+         "transparent": true,
+         "alwaysOnTop": true,
+         "skipTaskbar": true,
+         "width": 180,
+         "height": 32,
+         "resizable": false
+       }]
+     }
+   Verification:
+     cargo tauri dev
+     -> Window kecil muncul, tidak ada border, tidak ada taskbar entry
+     Screenshot
+
+E2-S1-T7 [30 min] — Placeholder UI (kotak hitam transparan)
+   Deliverable: src/index.html + styles.css dengan kapsul hitam rounded
+   DoD: HTML body background transparent, ada div #capsule dengan
+        background: rgba(20,20,24,0.95), border-radius 9999px, text "test"
+   Verification:
+     cargo tauri dev
+     -> Kapsul hitam kecil di atas layar, background window transparan
+     Screenshot
+
+E2-S1-T8 [15 min] — Verify window transparent + frameless + click-through basic
+   Deliverable: video/screenshot bukti behavior
+   DoD:
+     - Background window transparan (lihat desktop di belakang kapsul)
+     - Tidak ada tombol close di kapsul
+     - Klik di margin (di luar kapsul, area transparan) -> click-through ke desktop
+       (test: buka Notepad di belakang, klik di margin, Notepad ter-focus)
+     - Klik di kapsul -> tidak pass-through (tombol di kapsul bisa di-klik)
+   Verification:
+     Screenshot desktop + Notepad di belakang + klik margin test
+   Catatan: Kalau click-through belum jalan default, itu normal —
+            itu yang akan diselesaikan di E3 (hit-testing).
+
+--------------------------------------------------------------------------------
+EPIC E3: HIT-TESTING — P0-S2 (5 tasks, ~6 jam) — RISK #1
+--------------------------------------------------------------------------------
+
+PERINGATAN: Ini titik paling rawan. Kalau gagal, kita pivot.
+   Baca PRD v1.3 Section A12 + Section D1 untuk kill criteria.
+
+E3-S1-T9 [45 min] — Add windows crate + basic Win32 boilerplate
+   Deliverable: crate `windows` ditambah ke Cargo.toml + helper get HWND
+   DoD:
+     - Cargo.toml: windows = { version = "0.58", features = [...] }
+     - src-tauri/src/main.rs: `window.hwnd()` returns HWND
+     - Print HWND ke console saat boot
+   Verification:
+     cargo build
+     cargo tauri dev -> console: "HWND: 0x..."
+   Catatan: fitur crate `windows` yang perlu:
+     Win32_Foundation, Win32_UI_WindowsAndMessaging, Win32_UI_Input_KeyboardAndMouse
+
+E3-S1-T10 [1 jam] — Option A: polling cursor + set_ignore_cursor_events
+   Deliverable: src-tauri/src/hit_test.rs implementasi Option A
+   DoD:
+     - Poll cursor position tiap 16ms (60 FPS)
+     - Compute: kursor di dalam bounding box kapsul (180x32 di center)
+     - Call window.set_ignore_cursor_events(!inside_capsule)
+   Verification:
+     Manual test:
+       1. Kursor di margin -> klik Notepad di belakang -> Notepad ter-focus
+       2. Kursor di kapsul -> klik kapsul -> click event register (print "capsule clicked")
+     Paste log output
+
+E3-S1-T11 [2 jam] — Option B: Win32 WM_NCHITTEST subclass
+   Deliverable: src-tauri/src/hit_test.rs implementasi Option B (alternatif)
+   DoD:
+     - Subclass WndProc via SetWindowLongPtrW (GWLP_WNDPROC)
+     - Handle WM_NCHITTEST:
+         * Cursor inside capsule bounding box -> return HTCLIENT
+         * Cursor outside -> return HTTRANSPARENT
+     - Restore original WndProc on window close
+   Verification:
+     Manual test sama dengan E3-S1-T10
+     Paste log output
+
+E3-S1-T12 [45 min] — Stress test both options
+   Deliverable: catatan hasil stress test
+   DoD:
+     Test untuk masing-masing Option A dan B:
+       1. Rapid in/out 20x -> tidak ada flicker
+       2. Rapid click inside kapsul 10x -> semua register
+       3. Rapid click outside kapsul 10x -> semua pass-through
+       4. Drag cursor dari kapsul ke luar (slow) -> transisi smooth
+       5. Drag cursor dari luar ke kapsul (slow) -> transisi smooth
+       6. CPU saat idle 1 menit -> catat % (Option A lebih boros karena polling)
+   Verification:
+     Video screen recording 30 detik per opsi (atau screenshot sebelum/sesudah)
+     Paste Task Manager CPU % per opsi
+
+E3-S1-T13 [30 min] — Decision + document di SPIKE_NOTES.md
+   Deliverable: hit-test decision + alasan di SPIKE_NOTES.md
+   DoD:
+     SPIKE_NOTES.md berisi:
+       - Option A: works/tidak, CPU overhead, flicker issues
+       - Option B: works/tidak, stability, debug difficulty
+       - DECISION: pilih A atau B (default: B kalau stabil, A kalau B gagal)
+       - Kalau keduanya gagal -> FALLBACK aktif (capsule-sized window)
+   Verification:
+     cat docs/SPIKE_NOTES.md
+     Paste excerpt "Hit-testing decision" section
+
+KALAU E3 GAGAL SEMUA -> STOP. Pivot atau fallback. Jangan lanjut E4.
+
+--------------------------------------------------------------------------------
+EPIC E4: SMTC — P0-S4, P0-S5 (4 tasks, ~4 jam)
+--------------------------------------------------------------------------------
+
+E4-S1-T14 [1.5 jam] — SMTC read (WinRT)
+   Deliverable: src-tauri/src/smtc.rs — read current media session
+   DoD:
+     - Use windows crate WinRT API:
+         GlobalSystemMediaTransportControlsSessionManager
+     - Get current session
+     - Read: title, artist, playback_status, source_app
+     - Print to console every update
+   Verification:
+     Test 1: Play lagu di Spotify -> console show title + artist + "playing"
+     Test 2: Pause -> console show "paused"
+     Test 3: Close Spotify, buka Edge + play YouTube -> console show Edge + YouTube title
+   Paste console output
+
+E4-S1-T15 [45 min] — Multi-session tracking
+   Deliverable: track last_active_ts per session + choose most recent
+   DoD:
+     - Kalau > 1 session aktif -> pilih yang paling baru update
+     - Log semua session + chosen one ke console
+   Verification:
+     Test: Play Spotify + YouTube Edge bersamaan, skip lagu di Edge ->
+           notch harus switch ke Edge (bukan tetap Spotify)
+     Paste console log
+
+E4-S1-T16 [1 jam] — SMTC control (play/pause/next/prev)
+   Deliverable: src-tauri/src/smtc.rs — control functions
+   DoD:
+     - Implement: play(), pause(), toggle(), next(), prev()
+     - Call from JS via Tauri command (invoke)
+     - Wire 4 tombol di frontend (tombol kecil di kapsul)
+   Verification:
+     Test: Klik tombol play/pause -> Spotify pause/play
+           Klik next -> lagu skip
+     Paste console log + video 10 detik
+
+E4-S1-T17 [45 min] — Verify SMTC control latency
+   Deliverable: latency measurement
+   DoD:
+     - Measure: click timestamp -> audio change timestamp
+     - Target: < 100ms
+     - Test 10x, catat p50, p95
+   Verification:
+     Tambah `console.log(Date.now(), "click")` di handler + log di Rust saat
+     command dieksekusi. Hitung selisih dari log timestamp.
+     Paste 10 data point + rata-rata
+
+--------------------------------------------------------------------------------
+EPIC E5: ANIMATION — P0-S3, P0-S6 (3 tasks, ~3 jam)
+--------------------------------------------------------------------------------
+
+E5-S1-T18 [1 jam] — Hover expand CSS animation
+   Deliverable: src/styles.css + src/main.js — hover animation
+   DoD:
+     - Kapsul collapsed 180x32 -> hover -> expanded 320x80
+     - CSS transition: transform scale + opacity (GPU-accelerated)
+     - Duration: 150ms, easing: cubic-bezier(0.4, 0.0, 0.2, 1)
+     - Leave delay 175ms (debounce)
+   Verification:
+     - Kursor masuk kapsul -> expand smooth
+     - Kursor keluar -> collapse smooth
+     - Rapid in/out 10x -> tidak flicker
+     - Screenshot collapsed + expanded
+     - Video 10 detik
+   Catatan: Opacity transition untuk konten (title, artist) fade in/out.
+
+E5-S1-T19 [1 jam] — Marquee Title Peek 1.5s
+   Deliverable: src/main.js + styles.css — marquee animation
+   DoD:
+     - Saat trigger (test: klik tombol "Simulate Track Change")
+     - Capsule tetap collapsed (180x32)
+     - Text scroll horizontal selama 1.5s
+     - Setelah 1.5s -> balik ke icon
+     - Easing smooth
+   Verification:
+     - Klik trigger -> marquee jalan 1.5s -> balik ke icon
+     - Screenshot 3 frame (start, mid, end)
+     - Video 5 detik
+
+E5-S1-T20 [1 jam] — FPS + CPU during animation
+   Deliverable: measurement
+   DoD:
+     - FPS selama marquee: 55-60 (target)
+     - FPS selama hover expand: 55-60
+     - CPU during marquee: < 3% (target)
+     - CPU during hover expand: < 2%
+   Verification:
+     - DevTools FPS meter (Ctrl+Shift+P -> "Show FPS meter" di WebView2)
+     - Task Manager CPU % selama 10 detik animasi
+     - Paste screenshot FPS + CPU
+
+--------------------------------------------------------------------------------
+EPIC E6: FULLSCREEN + TRAY — P0-S7, P0-S8 (3 tasks, ~3 jam)
+--------------------------------------------------------------------------------
+
+E6-S1-T21 [1.5 jam] — Fullscreen detection
+   Deliverable: src-tauri/src/fullscreen.rs — poll + detect + emit
+   DoD:
+     - Poll every 500ms: GetForegroundWindow + cek apakah fullscreen
+       (window rect == screen rect, no border, no taskbar)
+     - Emit "fullscreen_changed" event to frontend
+     - Frontend: hide capsule (visibility: hidden) when fullscreen
+   Verification:
+     Test:
+       1. Buka YouTube, klik fullscreen -> capsule hilang < 500ms
+       2. Exit fullscreen -> capsule muncul
+       3. Buka Netflix app fullscreen -> capsule hilang
+       4. Fullscreen di Notepad (gak biasanya) -> tidak hide (false positive test)
+     Paste log + video 20 detik
+
+E6-S1-T22 [1 jam] — Tray icon + menu
+   Deliverable: tray-icon crate + menu Show/Hide/Reload/Quit
+   DoD:
+     - Tray icon visible di pojok kanan bawah
+     - Right-click -> menu dengan 4 items:
+         Show / Hide -> toggle window visibility
+         Reload -> restart WebView (dev tool)
+         Quit -> exit app cleanly
+   Verification:
+     - Klik tray -> menu muncul (screenshot)
+     - Klik "Hide" -> capsule hilang
+     - Klik "Show" -> capsule muncul
+     - Klik "Quit" -> app exit (task manager clean)
+
+E6-S1-T23 [30 min] — Verify fullscreen + tray latency & behavior
+   Deliverable: measurement
+   DoD:
+     - Fullscreen hide latency < 500ms (5 test runs)
+     - Fullscreen exit latency < 500ms
+     - False positive rate < 20% (test 5 apps fullscreen)
+     - Tray menu opens < 200ms
+   Verification:
+     - Stopwatch atau log timestamp
+     - Paste 5 test runs
+
+--------------------------------------------------------------------------------
+EPIC E7: FOREGROUND TRACKING — P0-S9, P0-S10 (4 tasks, ~4 jam)
+--------------------------------------------------------------------------------
+
+E7-S1-T24 [45 min] — GetForegroundWindow + title read
+   Deliverable: src-tauri/src/foreground.rs — poll + extract
+   DoD:
+     - Poll every 5s: GetForegroundWindow
+     - GetWindowTextW -> title string
+     - GetWindowThreadProcessId -> process.exe name (via QueryFullProcessImageNameW)
+     - Print to console: "Foreground: [process.exe] — [title]"
+   Verification:
+     Test: Buka VS Code, Chrome (IG), File Manager ->
+           console show process + title correct
+     Paste 5 log samples
+
+E7-S1-T25 [1.5 jam] — Title parsing regex + categorize
+   Deliverable: src-tauri/src/foreground.rs — categorize function
+   DoD:
+     - Config-based regex patterns (hardcode untuk Phase 0, tidak config.json)
+     - Categories: social / streaming / gaming / work / unknown
+     - Order: gaming_apps (exact) -> work_whitelist (exact) -> social (regex)
+              -> streaming (regex) -> unknown
+     - Print categorized result
+   Verification:
+     Test: 5 apps -> log correct category
+       - Instagram di Chrome -> social
+       - YouTube di Chrome -> streaming (atau social, tergantung config)
+       - VS Code -> work
+       - File Manager -> unknown (ignore)
+     Paste log
+
+E7-S1-T26 [1 jam] — 20-session accuracy test
+   Deliverable: hasil test
+   DoD:
+     - Manual test 20 kali buka app berbeda (mix browser + native)
+     - Catat: apakah kategori benar (yes/no)
+     - Hitung akurasi: target >= 85%
+   Verification:
+     Paste tabel: 20 baris (app, window title, kategori, benar?)
+     + akurasi %
+
+E7-S1-T27 [30 min] — Document akurasi di SPIKE_NOTES.md
+   Deliverable: section "Title parsing" di SPIKE_NOTES.md
+   DoD:
+     - Akurasi % (misal: 18/20 = 90%)
+     - Known limitation (title tidak standar, custom page title)
+     - Decision: lanjut (>= 85%) atau scope down Tiny Timer
+   Verification:
+     cat docs/SPIKE_NOTES.md | grep "Title parsing"
+
+--------------------------------------------------------------------------------
+EPIC E8: WSL HOOK — P0-S11 (4 tasks, ~4 jam) — RISK #2
+--------------------------------------------------------------------------------
+
+E8-S1-T28 [1.5 jam] — HTTP server di localhost:9182
+   Deliverable: src-tauri/src/wsl_hook.rs — axum server
+   DoD:
+     - Listen 127.0.0.1:9182
+     - POST /notch/notify -> accept JSON payload
+     - Payload: {source: str, duration_seconds: int, exit_code: int}
+     - Emit "async_task_complete" event to frontend
+     - Bind explicit 127.0.0.1 (BUKAN 0.0.0.0) — security
+   Verification:
+     curl -X POST http://127.0.0.1:9182/notch/notify \
+       -H "Content-Type: application/json" \
+       -d '{"source":"test","duration_seconds":15,"exit_code":0}'
+     -> console show event received
+     Paste curl output + console log
+
+E8-S1-T29 [1 jam] — Token auth + payload validation
+   Deliverable: token check di wsl_hook.rs
+   DoD:
+     - Generate token (UUID v4) saat first run -> save ke config.json
+       (atau print ke console untuk Phase 0 — config.json di M1)
+     - Require header "X-Notch-Token" match token
+     - Reject 401 if token missing/wrong
+     - Validate payload: max 1KB, required fields present
+     - Rate limit: 100 req/min (bisa skip untuk Phase 0, tapi log warning if exceed)
+   Verification:
+     - curl tanpa token -> 401 (paste)
+     - curl dengan token -> 200 (paste)
+     - curl dengan payload > 1KB -> 400
+
+E8-S1-T30 [1 jam] — Bash hook template + installer
+   Deliverable: docs/wsl_hook_setup.sh + README section
+   DoD:
+     - Script install: generate token, print 3 lines to paste di .bashrc
+     - Template bash function: __notch_wrap <source> <command...>
+     - Auto-wrap common commands: opencode, cline, npm, cargo
+   Verification:
+     - Run installer, paste output
+     - Apply to .bashrc test, run: __notch_wrap test sleep 15
+     - Console show notify event received
+
+E8-S1-T31 [1 jam] — End-to-end test
+   Deliverable: hasil test
+   DoD:
+     - Test: `__notch_wrap opencode opencode run "echo test"` -> 5-10 detik ->
+              notch console show "opencode done" < 500ms
+     - Latency: shell exit -> notch event < 500ms
+     - Test 5x, catat latency
+   Verification:
+     - Paste 5 latency data point + video 20 detik
+     - Kalau gagal > 500ms konsisten -> report
+
+KALAU E8 GAGAL -> catat di SPIKE_NOTES.md. Drop F032/F033 dari M3.
+   Notch tetap berguna untuk media + Tiny Timer.
+
+--------------------------------------------------------------------------------
+EPIC E9: MEASUREMENTS — P0-S12, P0-S13 (3 tasks, ~2 jam)
+--------------------------------------------------------------------------------
+
+E9-S1-T32 [30 min] — RAM baseline
+   Deliverable: RAM measurement
+   DoD:
+     - Task Manager -> tab Processes -> cari "WinNotch"
+     - Catat RAM semua proses WinNotch (main + WebView2 + GPU + renderer)
+     - Test 3 kondisi:
+         1. Idle 10 menit (no media, no interaction) -> target < 100 MB
+         2. Media playing + hover expand -> target < 130 MB
+         3. Media playing + marquee -> target < 130 MB
+   Verification:
+     Paste screenshot Task Manager 3 kondisi
+
+E9-S1-T33 [30 min] — CPU baseline
+   Deliverable: CPU measurement
+   DoD:
+     - Test 3 kondisi:
+         1. Idle 10 menit -> target ~0%
+         2. Hover expand active (animasi terus) -> target < 2%
+         3. Marquee active -> target < 3%
+   Verification:
+     Paste screenshot Task Manager CPU % 3 kondisi
+
+E9-S1-T34 [1 jam] — Soak test 4h minimum
+   Deliverable: soak test report
+   DoD:
+     - Run app 4 jam dengan media playing + tracking aktif
+     - Catat RAM start vs RAM end (target delta < 10%)
+     - Catat CPU average
+     - Catat crash count (target: 0)
+   Verification:
+     Paste: RAM start, RAM end, delta %, CPU avg, crash count
+
+--------------------------------------------------------------------------------
+EPIC E10: FINAL WRAP (2 tasks, ~1.5 jam)
+--------------------------------------------------------------------------------
+
+E10-S1-T35 [1 jam] — SPIKE_NOTES.md complete
+   Deliverable: SPIKE_NOTES.md comprehensive
+   DoD:
+     - Semua 13 spike result tercatat (pass/fail + angka)
+     - Decisions:
+         * Hit-testing Option A vs B (chosen)
+         * Title parsing akurasi
+         * WSL hook works/tidak
+         * RAM/CPU actual numbers
+         * Fullscreen false-positive rate
+     - Known issues documented
+     - Screenshots/evidence di folder docs/evidence/
+   Verification:
+     cat docs/SPIKE_NOTES.md
+     ls docs/evidence/
+     Paste excerpt
+
+E10-S1-T36 [30 min] — Go/No-Go decision
+   Deliverable: decision documented + version bump kalau perlu
+   DoD:
+     - Review SPIKE_NOTES.md
+     - Decision:
+         * GO -> lanjut M1 (F001, F002, F007, F018, F030)
+         * NO-GO -> pivot (wry+tao) atau scope down (documented)
+     - Kalau scope berubah -> update PRD.txt ke v1.4 dengan alasan
+     - Kalau GO -> tulis ROADMAP M1.txt
+   Verification:
+     cat docs/SPIKE_NOTES.md | grep "Decision"
+     Kalau GO: git tag v0.1.0-phase0-done
+
+================================================================================
+SECTION 5 — DELIVERABLES
+================================================================================
+
+5.1 CODE ARTIFACTS
+--------------------------------------------------------------------------------
+
+Backend:
+  src-tauri/src/main.rs
+  src-tauri/src/hit_test.rs
+  src-tauri/src/smtc.rs
+  src-tauri/src/foreground.rs
+  src-tauri/src/fullscreen.rs
+  src-tauri/src/wsl_hook.rs
+  src-tauri/src/commands.rs
+  src-tauri/Cargo.toml (dependencies)
+
+Frontend:
+  src/index.html
+  src/main.js
+  src/styles.css
+
+Config:
+  src-tauri/tauri.conf.json (transparent, frameless)
+  .gitignore
+
+Docs:
+  docs/PRD.txt (v1.3)
+  docs/ROADMAP FASE 0.txt (this file)
+  docs/SPIKE_NOTES.md
+  docs/TEAM_CONTRACT.txt
+  docs/wsl_hook_setup.sh
+  docs/evidence/ (screenshots)
+
+5.2 EVIDENCE (untuk Portfolio)
+--------------------------------------------------------------------------------
+
+  SPIKE_NOTES.md dengan angka nyata
+  Screenshot: window transparent + frameless
+  Video/screen recording: hit-testing behavior
+  Screenshot: Task Manager RAM + CPU
+  Screenshot: FPS meter during animation
+  Log: SMTC read + control
+  Log: title parsing 20 sessions
+  Log: WSL hook latency 5 runs
+
+================================================================================
+SECTION 6 — ACCEPTANCE CRITERIA (GO/NO-GO)
+================================================================================
+
+6.1 FUNCTIONAL ACCEPTANCE (ALL MUST PASS untuk GO)
+--------------------------------------------------------------------------------
+
+  [ ] E1: Environment ready, project builds
+  [ ] E2: Window transparent + frameless + always-on-top
+  [ ] E3: Hit-testing works (Option A atau B, bukan fallback)
+  [ ] E4: SMTC read + control works (Spotify + Edge)
+  [ ] E5: Hover expand < 80ms, 60 FPS, marquee 1.5s smooth
+  [ ] E6: Fullscreen hide < 500ms, false positive < 20%
+  [ ] E7: Foreground tracking + title parsing >= 85%
+  [ ] E8: WSL hook end-to-end < 500ms
+  [ ] E9: RAM < 100 MB idle, < 130 MB active; CPU ~0% idle
+  [ ] E10: SPIKE_NOTES.md complete
+
+6.2 GO / NO-GO
+--------------------------------------------------------------------------------
+
+GO (lanjut M1) — HARUS SEMUA BENAR:
+  [ ] E3 hit-testing works (bukan fallback)
+  [ ] E4 SMTC read + control works
+  [ ] E5 animation smooth (60 FPS, < 80ms)
+  [ ] E8 WSL hook works (atau explicitly scope down F032/F033)
+  [ ] E9 RAM < 130 MB, CPU < 3%
+  [ ] SPIKE_NOTES.md complete
+
+NO-GO (pivot atau scope down) — KALAU:
+  [ ] E3 fails both options -> fallback (capsule-sized window)
+  [ ] E4 SMTC tidak works -> drop F003
+  [ ] E5 animation > 45 FPS -> simplify
+  [ ] E8 fails -> drop F032/F033
+  [ ] E9 RAM > 150 MB stable -> simplify / drop marquee
+
+Setiap NO-GO harus di-document di SPIKE_NOTES.md dengan alasan + decision
+(yang mungkin = update PRD.txt ke v1.4).
+
+================================================================================
+SECTION 7 — RISKS & MITIGATIONS
+================================================================================
+
+Risk                                   | Likelihood | Impact | Mitigation
+---------------------------------------|------------|--------|--------------------------------
+Rust/Node version mismatch             | Low        | Med    | E1-T1 cek dulu sebelum mulai
+Tauri v2 build fails di Windows        | Low        | High   | Pastikan VS Build Tools C++ ada
+Hit-testing fails (Option A + B)       | Medium     | High   | Fallback capsule-sized window
+SMTC WinRT API unstable                | Low        | High   | Test dengan Spotify + Edge
+Marquee causes > 5% CPU                | Medium     | Med    | CSS transform only, no reflow
+Fullscreen detect false positive       | Medium     | Med    | Test 5 apps, tune criteria
+Title parsing < 85%                    | Medium     | Low    | Document as known limitation
+WSL hook fragile (bash version)        | Medium     | Med    | Setup wizard + fallback manual
+WSL not installed                      | Medium     | Low    | Graceful disable F032/F033
+RAM > 130 MB                           | Medium     | Med    | Simplify WebView2 config
+CPU idle > 1%                          | Medium     | Med    | Reduce poll frequency
+Config init (token) exposed in logs    | Low        | Med    | Sanitize logs
+
+================================================================================
+SECTION 8 — DEFINITION OF DONE (DoD) FASE 0
+================================================================================
+
+Phase 0 selesai KALAU:
+
+Infrastructure:
+  [ ] Environment ready (Rust 1.75+, Node 20+)
+  [ ] Project builds (`cargo tauri dev` works)
+  [ ] Folder structure sesuai PRD
+
+Spike Results:
+  [ ] 13 spike tasks executed (pass/fail documented)
+  [ ] Hit-testing decision made (A or B or fallback)
+  [ ] SMTC works (Spotify + Edge tested)
+  [ ] Animation < 80ms, 60 FPS
+  [ ] Fullscreen detect < 500ms
+  [ ] Foreground tracking works
+  [ ] Title parsing accuracy logged
+  [ ] WSL hook works atau scope down documented
+  [ ] RAM + CPU baselines logged
+  [ ] Soak test 4h clean
+
+Documentation:
+  [ ] SPIKE_NOTES.md complete
+  [ ] Evidence folder populated (screenshots, logs, videos)
+  [ ] Kill criteria evaluated (mana yang pass, mana yang fail)
+  [ ] Decision documented: GO / NO-GO
+
+Version Control:
+  [ ] Git repo clean (all changes committed)
+  [ ] Tag v0.1.0-phase0-done created (if GO)
+
+Next Action:
+  [ ] Kalau GO -> tulis ROADMAP M1.txt
+  [ ] Kalau NO-GO -> update PRD ke v1.4 dengan scope revision
+
+================================================================================
+SECTION 9 — NOTES & REFERENCES
+================================================================================
+
+9.1 NOTES UMUM
+--------------------------------------------------------------------------------
+
+- Phase 0 BUKAN build fitur. Ini VALIDASI. Kode yang ada akan di-refactor
+  di M1. Fokus: buktikan asumsi, catat angka.
+
+- Kalau OpenCode stuck di satu task > 2 prompt -> STOP. Baca ulang task,
+  mungkin prompt terlalu besar. Breakdown lagi jadi sub-task kecil.
+
+- Setiap task: paste RAW output (R3.1 TEAM_CONTRACT). Jangan paraphrase.
+  User verifikasi sendiri.
+
+- User commit via PowerShell, BUKAN WSL (credential issue). Format:
+    git add .
+    git commit -m "feat(phase0): <task-id> — <short description>"
+  Contoh: "feat(phase0): E2-S1-T7 — placeholder capsule UI"
+
+- Kalau satu spike gagal total, JANGAN skip ke task berikutnya tanpa
+  dokumentasi. Catat di SPIKE_NOTES.md dulu, baru lanjut.
+
+- Kalau stuck & tidak tahu harus ngapain, STOP -> tanya User -> User mungkin
+  revert task, atau pivot. Jangan paksa jalan.
+
+9.2 REFERENSI
+--------------------------------------------------------------------------------
+
+  - PRD.txt v1.3 — full spec
+  - TEAM_CONTRACT.txt — rules (R1-R10, R3.1-R3.4, R14 fix-first)
+  - SPIKE_NOTES.md — log harian (bikin di E1-S1-T4)
+  - E-Tix Flash ROADMAP (referensi struktur, bukan konten)
+
+9.3 KILL CRITERIA (RECAP)
+--------------------------------------------------------------------------------
+
+Kalau dalam 7 hari:
+  - P0-S2 (hit-testing) TIDAK STABIL di kedua opsi
+  - ATAU P0-S4/S5 (SMTC) TIDAK WORKS
+  - ATAU P0-S12/S13 (RAM/CPU) jauh di atas target
+  -> STOP. Buka diskusi dengan DeepSeek + Gemini. Pivot atau scope down.
+  -> Update PRD.txt ke v1.4 dengan alasan konkret.
+
+Kill criteria bukan tanda gagal. Kill criteria = kita sadar lebih cepat
+daripada buang 8-12 minggu ke jalan buntu.
+
+9.4 CARA PROMPT OPENCODE (TEMPLATE)
+--------------------------------------------------------------------------------
+
+Template prompt:
+
+opencode run "TASK: Kerjakan [TASK_ID] dari ROADMAP FASE 0.txt.
+
+RULES: Baca D:\AI Engineer\Notch\Windows\docs\TEAM_CONTRACT.txt.
+Patuhi semua RULES (R1-R10, R3.1-R3.4, R14 fix-first).
+
+KONTEKS:
+- Project path: D:\AI Engineer\Notch\Windows\
+- Baca juga D:\AI Engineer\Notch\Windows\docs\PRD.txt v1.3
+  (hanya section yang relevan dengan task)
+- Task yang dikerjakan: [TASK_ID] — [short name dari ROADMAP]
+
+LANGKAH: [isi dari ROADMAP task — deliverable, DoD, verification]
+
+VERIFIKASI USER: [isi dari ROADMAP — commands yang user jalankan setelah]
+
+Gas. Paste RAW output. STOP kalau ragu."
+
+Contoh konkret untuk E2-S1-T7:
+
+opencode run "TASK: Kerjakan E2-S1-T7 dari ROADMAP FASE 0.txt.
+
+RULES: Baca D:\AI Engineer\Notch\Windows\docs\TEAM_CONTRACT.txt.
+Patuhi R1-R10.
+
+KONTEKS:
+- Project path: D:\AI Engineer\Notch\Windows\
+- PRD v1.3 Section B3 Wireframe 1 (S1 IDLE_COLLAPSED) untuk referensi visual
+- Task: E2-S1-T7 — Placeholder UI (kotak hitam transparan)
+
+LANGKAH:
+1. Edit src/index.html — body transparent, div #capsule
+   dengan style: rgba(20,20,24,0.95), border-radius 9999px,
+   width 180px, height 32px, center top, text 'test'
+2. Edit src/styles.css — body { background: transparent; margin: 0; }
+3. Verify: cargo tauri dev -> kapsul hitam muncul di atas layar
+4. Paste screenshot
+
+VERIFIKASI USER:
+cd D:\AI Engineer\Notch\Windows\
+cat src/index.html
+cat src/styles.css
+cargo tauri dev
+-> cek kapsul hitam muncul
+
+Gas. Paste RAW output. STOP kalau ragu."
+
+================================================================================
+SECTION 10 — VERSION HISTORY
+================================================================================
+
+Version | Date       | Author       | Changes
+--------|------------|--------------|------------------------------------------
+1.0     | 2026-10-28 | M. Arif Aulia| Initial ROADMAP FASE 0. 36 tasks, 10 epics.
+
+================================================================================
+END OF ROADMAP FASE 0 v1.0-FINAL
+================================================================================
+
+36 tasks, 10 epics, ~50 jam (7-10 hari dengan buffer)
+Mengikuti TEAM_CONTRACT (task kecil, verifikasi konkret, no bypass)
+13 spike tasks sesuai PRD v1.3 Section D1
+Kill criteria + fallback jelas
+Siap untuk OpenCode eksekusi per-task
+
+================================================================================

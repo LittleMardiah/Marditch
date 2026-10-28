@@ -1,0 +1,1498 @@
+# =============================================================================
+# WinNotch — Master PRD v1.3
+# Ambient Awareness Companion
+# Single-Document Spec: Product + Behavior + Technical + Execution
+# =============================================================================
+
+## 📌 HEADER & METADATA
+
+| Field | Value |
+|-------|-------|
+| Project Name | WinNotch (Ambient Awareness Companion) |
+| Document Version | v1.3 |
+| Created Date | 2026-10-20 |
+| Last Updated | 2026-10-28 |
+| Author | M. Arif Aulia |
+| Status | Approved (Locked) |
+| Reviewers | Gemini (Micro), DeepSeek (Macro) |
+| Positioning | Ambient awareness companion — media + async task + time awareness |
+| Competitor Reference | Nusa (media/utility hub), RescueTime (time tracking), ntfy (notifications) — WinNotch unifies them into a notch |
+
+## ⚠️ CATATAN SCOPE — BACA DULU
+
+PRD v1.3 MENGGANTIKAN PRD v1.2. Pivot terjadi setelah refleksi personal:
+masalah terbesar bukan media control, tapi "kehilangan diri di IG/YouTube
+sambil nunggu async task selesai". V1.2 salah positioning.
+
+Scope final: **17 fitur** (11 media + 6 awareness). Bukan 11.
+Timeline realistis: **8-12 minggu** (no deadline, chill).
+Setiap milestone shippable.
+
+Detail perubahan: PART D §D3 (Decision Log D3-12, D3-13, D3-14).
+
+## 📋 TABLE OF CONTENTS
+
+PART A — PRODUCT (narrative)
+  A1. Header & Metadata
+  A2. Executive Summary
+  A3. Objectives & Success Metrics
+  A4. Platform Scope
+  A5. Scope Definition (In / Out / Baseline / Deferred)
+  A6. Milestone Structure
+  A7. User Stories & Acceptance Criteria
+  A8. UX Contract (U1–U8)
+  A9. Non-Functional Requirements
+  A10. Integration & Dependencies
+  A11. Assumptions & Constraints
+  A12. Risks & Mitigation
+  A13. What V1 Solves / Doesn't Solve
+
+PART B — BEHAVIOR
+  B1. State Machine (S0–S8)
+  B2. Multi-Session SMTC Rule
+  B3. Wireframes (S1–S5 + Awareness Variants)
+  B4. Interaction Map
+  B5. Design Tokens
+
+PART C — TECHNICAL
+  C1. Tech Stack Decision
+  C2. Architecture
+  C3. IPC Contract
+  C4. Config Schema
+  C5. Hit-testing & Click-through Strategy
+  C6. Security Posture
+  C7. Failure Modes & Recovery
+  C8. Foreground Tracking (F030-F035)
+  C9. WSL Shell Hook (F032)
+
+PART D — EXECUTION
+  D1. Phase 0 Spike + Kill Criteria
+  D2. Testing & Acceptance Checklist
+  D3. Decision Log
+  D4. Measurements / Evidence
+  D5. Acceptance & Sign-off
+  D6. Glossary
+  D7. Version History
+
+================================================================================
+PART A — PRODUCT (narrative)
+================================================================================
+
+--------------------------------------------------------------------------------
+A1. HEADER & METADATA
+--------------------------------------------------------------------------------
+
+Sudah di atas.
+
+--------------------------------------------------------------------------------
+A2. EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+
+**Problem Statement**
+
+Saya, Arif, coding 5-6 jam sehari di VS Code sambil dengar musik. Ada tiga
+hal yang konsisten mengganggu flow saya:
+
+1. **Skip lagu butuh Alt-Tab.** 4-5 kali per jam. Setiap kali, cursor di
+   VS Code hilang posisi, saya harus re-focus. Ini ganggu flow state.
+
+2. **Saya tidak tahu apa yang diputar.** Kalau tidak buka Spotify, saya
+   lupa lagu apa yang sedang main. Kadang saya dengar lagu yang tidak
+   saya suka selama 3 menit sebelum sadar.
+
+3. **Saya kebablasan di IG/YouTube saat nunggu async task selesai.**
+   Ini yang paling parah. Saya jalankan OpenCode di terminal, atau E2E
+   test, atau Cline — semuanya butuh 3-10 menit. Saya bosan, buka IG.
+   Scroll. Kebablasan 30-45 menit. Lupa proyek. Setelah sadar, saya
+   merasa bersalah. Siklusnya berulang tiap hari.
+
+Selain itu, saya juga sering kebablasan scroll IG/YouTube **tanpa alasan
+yang jelas** — bukan sambil nunggu apa-apa, murni karena bosan atau
+menghindari task yang susah. Saya baru sadar setelah 1-2 jam hilang.
+
+**Solution Overview**
+
+WinNotch = kapsul kecil di atas layar yang **tahu apa yang saya kerjakan,
+berapa lama, dan kapan async task selesai.**
+
+Komponennya:
+
+- **Media awareness:** hover expand untuk kontrol musik, Title Peek
+  1.5s saat lagu ganti (tanpa hover), Pin State untuk interaksi tenang.
+- **Async task awareness:** OpenCode / Cline / E2E test / manual long
+  command selesai → notch kasih sinyal marquee 1.5s. Tidak perlu balik
+  ke terminal untuk cek.
+- **Time awareness:** di IG/YouTube window (bukan fullscreen) → tiny
+  timer di ikon kapsul. 20 menit → normal. 40 menit → orange. 60 menit
+  → red + pulse. Zero interruption, glanceable.
+- **Fullscreen awareness:** nonton Netflix/anime fullscreen → notch
+  hidden (tidak ganggu immersion). Exit → summary card 3s: "Netflix
+  2j 15m. Mau break 5 menit?" — auto-collapse, zero judgement.
+- **Gaming escape:** config "gaming_apps" → nol notifikasi, nol tracking.
+  Gaming fully respected.
+
+**Value Proposition**
+
+Nusa (kompetitor utama) fokus pada utility hub: Pomodoro, water reminder,
+file shelf, lyrics, timer. Bagus, tapi bukan yang saya butuhkan.
+
+WinNotch fokus pada **awareness yang fragmented di 4 tools berbeda**:
+
+- RescueTime → tracking, tapi tidak real-time, tidak di notch.
+- ActivityWatch → tracking, tapi tidak ada notifikasi.
+- ntfy / terminal-notifier → notifikasi async, tapi tidak aware konteks.
+- Windows Task Manager → tahu proses, tapi bukan user-facing.
+
+**WinNotch menyatukan 4 fungsi ini di satu titik glanceable di atas
+layar.** Media + async task + time awareness. Tidak ada kompetitor yang
+melakukan ketiganya sekaligus.
+
+**Target Users**
+
+- **Primary: saya sendiri.** Developer yang coding 5-6 jam/hari sambil
+  dengar musik + pakai AI agent + rentan kebablasan di social media.
+- **Secondary: power user Windows lain** dengan pola sama — developer,
+  peneliti, writer, siapa pun yang: (a) sering Alt-Tab untuk skip lagu,
+  (b) pakai async task (AI agent / build / test), (c) rentan sosial
+  media scrolling tanpa sadar.
+
+**Honest Acknowledgment**
+
+- Nusa (~45k download, native Rust, ~30 MB RAM) sudah jadi produk
+  matang di space "media notch". WinNotch **tidak** mencoba mengalahkan
+  Nusa di fitur atau RAM mentah. Kami fokus di **awareness layer** yang
+  Nusa tidak punya.
+- Title parsing untuk deteksi browser (IG vs YouTube vs Google Docs)
+  hanya **~90% akurat**. Bukan untuk billing, hanya untuk awareness.
+  Browser extension = v1.1 kalau perlu lebih akurat.
+- WSL shell hook butuh user edit `.bashrc` (1 line, di-setup otomatis
+  oleh installer).
+
+--------------------------------------------------------------------------------
+A3. OBJECTIVES & SUCCESS METRICS
+--------------------------------------------------------------------------------
+
+**Primary Objectives**
+
+1. Deliver frameless, transparent, always-on-top capsule overlay dengan
+   hit-testing yang precise dan hover animation yang fluid.
+2. Integrate Windows SMTC untuk media awareness (metadata + control).
+3. Deliver **awareness layer** yang Nusa tidak punya: async task
+   notification + time tracking + fullscreen summary.
+4. Maintain "feel ringan": CPU ~0% idle, startup < 1s, no memory growth.
+5. Deliver portfolio-grade process: UX Contract, Decision Log, Phase 0
+   Spike with kill criteria.
+
+**Success Metrics (Measurable)**
+
+| Metric | Target | Acceptance |
+|--------|--------|-----------|
+| RAM idle (total, all processes) | < 100 MB typical | Task Manager 10 min idle |
+| RAM with tracking + animation | < 130 MB | During marquee + tracking active |
+| CPU idle (no animation) | ~0% | Task Manager 10 min idle |
+| CPU during tracking + marquee | < 3% | Task Manager |
+| Startup time | < 1s | Tray click → capsule visible |
+| Media control latency | < 100 ms | Click → command executed |
+| Hover expand delay | < 80 ms | Stopwatch / DevTools |
+| Hover leave debounce | 150–200 ms | No flicker on rapid in/out |
+| Foreground poll interval | 2-5 s | Configurable |
+| Title parsing accuracy (browser) | ~90% | Manual test 20 sessions |
+| Async notification latency (shell → notch) | < 500 ms | Shell exit → marquee visible |
+| Fullscreen summary appear delay | < 1s after exit | Stopwatch |
+| Soak test 24h memory delta | < 10% | Task Manager before/after |
+| Multi-session SMTC | Correct | Test Spotify + Edge + VLC |
+
+**Non-targets (honest)**
+
+- RAM < 30 MB (Nusa achieves this; Tauri+WebView2 cannot match).
+- Title parsing 100% accurate (browser extension needed).
+- Battery impact = zero (WebView2 GPU wake-up on animation is real).
+- WSL tracking tanpa shell hook (technically impossible from Windows).
+
+--------------------------------------------------------------------------------
+A4. PLATFORM SCOPE
+--------------------------------------------------------------------------------
+
+**In Scope (V1)**
+
+- Windows 10 (build 19041+) with WebView2
+- Windows 11
+- WSL 2 (Ubuntu, Debian) — via shell hook
+- Primary display, single monitor default
+- Multi-monitor: drag to another monitor (F011)
+
+**Future Platform (Deferred)**
+
+- Linux native (MPRIS D-Bus) → v2.0
+- Android adapter → backlog
+- macOS → NOT planned
+
+**Rationale**
+
+Windows-only V1 memastikan delivery cepat. WSL adalah pengecualian
+karena async task awareness = core use case.
+
+--------------------------------------------------------------------------------
+A5. SCOPE DEFINITION
+--------------------------------------------------------------------------------
+
+**IN SCOPE — V1 (17 fitur)**
+
+**Media Layer (11 fitur — dari PRD v1.2)**
+
+| ID | Feature | Milestone | Priority |
+|----|---------|-----------|----------|
+| F001 | Frameless floating overlay window | M1 | P0 |
+| F002 | Hover expand/collapse + Pin State (S4) | M1 | P0 |
+| F003 | SMTC media control (multi-session rule) | M1 | P0 |
+| F007 | App lifecycle & tray | M1 | P0 |
+| F018 | Sleep/wake handling (baseline) | M1 | P0 |
+| F008 | Auto-hide on fullscreen (dengan summary variant) | M2 | P0 |
+| F011 | Drag reposition + 5px threshold + cross-monitor | M2 | P0 |
+| F012 | Progress bar | M2 | P0 |
+| F020 | DPI-aware + hit-box padding | M2 | P0 |
+| F022 | Tray gray-out saat backend putus | M2 | P1 |
+| F023 | Title Peek (marquee 1.5s) | M2 | P0 |
+
+**Awareness Layer (6 fitur baru)**
+
+| ID | Feature | Milestone | Priority |
+|----|---------|-----------|----------|
+| F030 | Foreground app tracking (Win32 polling) | M1 | P0 |
+| F031 | Session timer (berapa lama di app X) | M3 | P0 |
+| F032 | WSL shell hook listener (async task notify) | M3 | P0 |
+| F033 | Async task notification (marquee + duration) | M3 | P0 |
+| F034 | Social media reminder (Tiny Timer di kapsul) | M4 | P0 |
+| F035 | App categorization (social/streaming/gaming/work) | M4 | P0 |
+
+**BASELINE CORRECTNESS**
+
+| ID | Item | Alasan |
+|----|------|--------|
+| F018 | Sleep/wake handling | Tanpa ini, app terlihat "rusak" setelah laptop sleep |
+
+**DEFERRED TO v1.1**
+
+| ID | Feature | Alasan |
+|----|---------|--------|
+| F016 | Album art | RAM risk. Opt-in setelah Phase 0 angka RAM aman. |
+| F017 | Battery indicator | Niche, bukan core. |
+| F019 | Opacity config | Polish, 1 baris CSS. |
+| F009 | Global hotkey | User bisa pakai tray. |
+| F036 | Browser extension (title parsing lebih akurat) | Title parsing Win32 ~90% cukup untuk V1. Extension = v1.1. |
+| F037 | Detailed time report (harian/mingguan) | v1.1. Butuh SQLite atau file log persistent. |
+| F038 | App-specific custom thresholds | v1.1. V1 pakai default 20/40/60 menit untuk semua social. |
+
+**CUT FROM V1 (final)**
+
+| ID | Feature | Alasan |
+|----|---------|--------|
+| F010 | Right-click context menu | Rawan salah klik, duplikasi tray |
+| F013 | Volume control | Mengaburkan identitas, keyboard sudah bekerja |
+| F014 | Keyboard shortcut pinned | Mental model aneh |
+
+**OUT OF SCOPE (never)**
+
+- Settings UI (config.json cukup)
+- Theme system
+- Cloud sync / user accounts / online telemetry
+- Database (config file cukup)
+- Pomodoro / water reminder / to-do / lyrics (Nusa territory)
+- Detailed time reports (billing-grade)
+- Parental control / screen time enforcement (bukan nanny)
+
+**Rationale**
+
+17 fitur melayani tiga pilar: media (11 lama), async task (F032-F033),
+time awareness (F030-F031-F034-F035). Semua melayani **masalah personal**
+yang saya alami sendiri, bukan fitur "karena bisa".
+
+--------------------------------------------------------------------------------
+A6. MILESTONE STRUCTURE
+--------------------------------------------------------------------------------
+
+**M1 — FONDASI + TRACKING (5 fitur, 2-3 minggu)**
+
+| ID | Deliverable |
+|----|-------------|
+| F001 | Capsule top-center, frameless, always-on-top |
+| F002 | Hover expand/collapse + Pin State S4 |
+| F007 | Tray + Show/Hide/Reload/Quit + config.json |
+| F018 | Sleep/wake metadata refresh |
+| F030 | Foreground app tracking (Win32 GetForegroundWindow) |
+
+**M2 — MEDIA LENGKAP + FULLSCREEN (6 fitur, 2-3 minggu)**
+
+| ID | Deliverable |
+|----|-------------|
+| F003 | SMTC read + control + multi-session rule |
+| F012 | Progress bar |
+| F023 | Title Peek (marquee 1.5s) |
+| F008 | Auto-hide on fullscreen + summary card on exit |
+| F011 | Drag + 5px threshold + cross-monitor |
+| F020 | DPI-aware + hit-box padding |
+| F022 | Tray gray-out saat backend putus |
+
+(Catatan: F022 masuk M2 karena butuh F030 untuk health-check baseline)
+
+**M3 — ASYNC TASK AWARENESS (3 fitur, 2-3 minggu)**
+
+| ID | Deliverable |
+|----|-------------|
+| F031 | Session timer (elapsed time di app aktif) |
+| F032 | WSL shell hook listener (setup otomatis) |
+| F033 | Async task notification (marquee + duration) |
+
+**M4 — TIME AWARENESS (2 fitur, 2-3 minggu)**
+
+| ID | Deliverable |
+|----|-------------|
+| F034 | Social media Tiny Timer (20/40/60 menit thresholds) |
+| F035 | App categorization (social/streaming/gaming/work) |
+
+**Aturan Milestone**
+
+- Setiap milestone **shippable independently**.
+- M1+M2 = "media notch dengan awareness basic" — sudah portfolio-worthy.
+- M1+M2+M3 = "media + async task" — selesaikan 2 dari 3 masalah utama.
+- Full M4 = "full awareness companion" — selesaikan semua 3 masalah.
+
+**Estimasi jujur:** 8-12 minggu vibe coding solo, no deadline. Kalau mau lebih cepat, skip M4 dulu.
+
+--------------------------------------------------------------------------------
+A7. USER STORIES & ACCEPTANCE CRITERIA
+--------------------------------------------------------------------------------
+
+**US1 — Skip lagu tanpa Alt-Tab**
+
+AS Arif, coding 5-6 jam sehari dengan Spotify playing
+I WANT to skip songs without Alt-Tab and without losing cursor position
+SO THAT I don't break flow state 4-5 times per hour
+
+Acceptance:
+- [ ] Hover capsule < 80ms expand
+- [ ] Click next → lagu skip < 100ms
+- [ ] Focus window (VS Code) unchanged
+- [ ] Cursor position in VS Code unchanged (U3)
+
+**US2 — Glanceable tanpa hover**
+
+AS Arif, fokus coding dan tidak mau terganggu
+I WANT to see the new track title without hover
+SO THAT I stay in flow dan tahu lagu berubah
+
+Acceptance:
+- [ ] Track change → capsule stays collapsed
+- [ ] Marquee title 1.5s (F023)
+- [ ] Then returns to icon (♪)
+- [ ] Capsule does NOT auto-expand (respects U4)
+
+**US3 — Pin untuk interaksi tenang**
+
+AS Arif, mau baca lirik atau klik tombol dengan tenang
+I WANT to pin the capsule expanded
+SO THAT it doesn't collapse while I move the mouse
+
+Acceptance:
+- [ ] Click capsule → pin (S4)
+- [ ] Mouse leave → does NOT collapse
+- [ ] ESC / re-click → unpin
+
+**US4 — Async task selesai tanpa cek terminal**
+
+AS Arif, menunggu OpenCode / E2E test / Cline selesai
+I WANT a notification saat task selesai
+SO THAT saya tidak perlu bolak-balik cek terminal
+
+Acceptance:
+- [ ] WSL shell hook terpasang (1 line di .bashrc, auto by installer)
+- [ ] Async task selesai → marquee 1.5s di kapsul: "OpenCode done — 4m 32s"
+- [ ] Latency < 500ms dari shell exit ke marquee visible
+- [ ] Manual long command (npm build) → juga trigger
+- [ ] Tidak ada notification kalau task < 10s (tidak ada gunanya)
+
+**US5 — Sadar berapa lama di IG/YouTube**
+
+AS Arif, scroll IG/YouTube tanpa sadar
+I WANT tiny timer di kapsul saat saya di social app
+SO THAT saya sadar sudah berapa lama
+
+Acceptance:
+- [ ] Foreground = Instagram (via title parsing) → ikon `•` berubah jadi `20:15`
+- [ ] 20 menit → normal (white)
+- [ ] 40 menit → orange
+- [ ] 60 menit → red + pulse 1x
+- [ ] Tidak expand, tidak marquee, tidak suara (U8)
+- [ ] Threshold configurable di config.json
+
+**US6 — Fullscreen tidak ganggu, tapi aware**
+
+AS Arif, nonton anime fullscreen
+I WANT notch hidden saat fullscreen, tapi summary saat keluar
+SO THAT immersion tidak rusak, tapi saya tahu berapa lama
+
+Acceptance:
+- [ ] Fullscreen detected → capsule hidden < 500ms
+- [ ] Background tracking tetap jalan
+- [ ] Exit fullscreen → summary card expand 3s: "Netflix — 2j 15m"
+- [ ] Auto-collapse setelah 3s (tidak perlu klik)
+- [ ] Zero judgement (tidak ada "kamu terlalu lama")
+
+**US7 — Gaming fully respected**
+
+AS Arif, main Wuthering Waves
+I WANT notch silent total saat gaming
+SO THAT gaming experience 100% tidak terganggu
+
+Acceptance:
+- [ ] Config: "gaming_apps": ["WutheringWaves.exe"]
+- [ ] Saat game aktif → capsule hidden total, tidak track, tidak notify
+- [ ] Exit game → capsule normal kembali, tidak summary
+
+**US8 — Lifecycle control**
+
+AS Arif, mau matikan app
+I WANT clear Show/Hide/Reload/Quit
+SO THAT saya tidak perlu Task Manager
+
+Acceptance:
+- [ ] Tray menu Show/Hide/Reload/Quit
+- [ ] Quit exits cleanly (persist config)
+- [ ] Single instance
+- [ ] config.json read on startup, atomically on exit
+
+--------------------------------------------------------------------------------
+A8. UX CONTRACT (U1–U8)
+--------------------------------------------------------------------------------
+
+| ID | UX Must-Feel | Validation |
+|----|--------------|-----------|
+| U1 | Never "stuck" on screen — user always knows how to dismiss | Tray visible; ESC = unpin; right-click menu |
+| U2 | Hover feels instant, not waiting | Expand < 80ms; leave delay 150-200ms |
+| U3 | No focus stealing while user is typing | Focused window unchanged on expand/click |
+| U4 | Idle state truly passive (no blinking, no constant animation) | Nothing moves when no media + no tracking event |
+| U5 | Error states don't panic user | SMTC failure → idle; WSL disconnect → silent log |
+| U6 | First-run clarity | Tooltip + WSL setup wizard, once each |
+| U7 | Personal feel test (15 min real use) | Log friction points |
+| **U8** | **Awareness tidak pernah "muncul tiba-tiba"** | Tiny Timer = ikon berubah, zero expand/marquee/suara. Async notify = marquee 1.5s (yang user tunggu, bukan interrupt). Fullscreen summary = setelah exit, auto-collapse 3s. |
+
+**Anti-Creep Rule**
+
+Kalau UX polish konflik dengan timeline, kurangi animasi — JANGAN
+tambah fitur. UX = "tidak ada yang mengganggu", bukan "paling banyak
+gerakan". U8 adalah pembeda utama: awareness tanpa interruption.
+
+--------------------------------------------------------------------------------
+A9. NON-FUNCTIONAL REQUIREMENTS
+--------------------------------------------------------------------------------
+
+**Performance**
+
+- RAM idle: < 100 MB total working set (WebView2 + tracking daemon).
+- RAM during tracking + marquee: < 130 MB.
+- CPU idle: ~0% when no animation.
+- CPU during marquee/hover: < 2%.
+- CPU during tracking (polling foreground): < 1%.
+- Startup: < 1s.
+- Media control latency: < 100ms.
+- Foreground poll: 2-5s interval (configurable).
+- Animation: 60 FPS, GPU-accelerated only.
+- Soak test: 24h no crash, memory delta < 10%.
+
+**Security**
+
+- No network access at runtime (SMTC + foreground tracking = local only).
+- WSL shell hook: localhost HTTP dengan **token auth** (generated at install, stored in config). Port tidak open ke network.
+- No telemetry, no cloud sync.
+- config.json local only.
+
+**Reliability**
+
+- 24h soak test, no crash, memory delta < 10%.
+- Config atomic write (temp + rename).
+- WSL hook: idempotent (kalau Notch down, task tetap jalan; hook silently log).
+
+**Usability**
+
+- Responsive: 1080p, 2K, 4K; DPI-aware.
+- Contrast ≥ 4.5:1 for text.
+- Keyboard: click capsule = toggle, ESC = collapse.
+- First-run: tooltip + WSL setup wizard.
+
+**Honest Non-Targets**
+
+- Cannot match Nusa's ~30 MB RAM.
+- Title parsing ~90% accurate (tidak 100%).
+- Battery impact = not zero (WebView2 GPU wake).
+- WSL tracking butuh user setup shell hook (1 line).
+
+--------------------------------------------------------------------------------
+A10. INTEGRATION & DEPENDENCIES
+--------------------------------------------------------------------------------
+
+**External Services**
+
+| Service | Purpose | Provider | Criticality |
+|---------|---------|----------|-------------|
+| Windows SMTC API | Media metadata + control | Microsoft WinRT | Critical |
+| WebView2 | Rendering | Microsoft | Critical |
+| WSL 2 | Async task source | Microsoft | Critical untuk M3-M4 |
+
+**Internal Dependencies**
+
+- Tauri v2, `windows` crate, `tray-icon`, `serde`, `tokio`
+- Rust 1.75+, Node.js (frontend build)
+
+**Technology Constraints**
+
+- Windows 10 build 19041+ / 11
+- WebView2 installed
+- WSL 2 untuk async task tracking (optional — kalau tidak ada WSL, F032 silent skip)
+- No network, no database
+
+--------------------------------------------------------------------------------
+A11. ASSUMPTIONS & CONSTRAINTS
+--------------------------------------------------------------------------------
+
+**Assumptions**
+
+- User run Windows 10/11 dengan WebView2.
+- Media apps support SMTC (Spotify, Edge, VLC, WMP).
+- User punya WSL 2 (untuk async task). Kalau tidak, F032 di-disable dengan graceful degradation.
+- Foreground tracking via Win32 `GetForegroundWindow` reliable di 90% kasus.
+
+**Constraints**
+
+- Timeline: **no deadline** (chill). Estimasi realistis 8-12 minggu untuk full M1-M4.
+- Technical: local-only, no cloud, no network (kecuali localhost untuk WSL hook).
+- Resource: solo developer + OpenCode.
+- Positioning: **NOT** competing with Nusa on media features or raw RAM. Competing on **awareness layer**.
+
+--------------------------------------------------------------------------------
+A12. RISKS & MITIGATION
+--------------------------------------------------------------------------------
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|-----------|--------|-----------|
+| Hit-testing region-based unstable | High | High | Phase 0 Spike (5 days). Fallback: capsule-sized window tanpa transparent margin. |
+| RAM > 130 MB dengan tracking | Medium | Medium | Foreground poll 5s (bukan 2s). Config minimum. Drop F034 kalau RAM tidak aman. |
+| Title parsing akurasi < 85% | Medium | Medium | Test manual 20 sessions. Kalau < 85%, tawarkan browser extension sebagai opt-in (v1.1). |
+| WSL hook fragile (Bash version, Shell startup lag) | Medium | Medium | Setup wizard + fallback ke manual edit. Log warning. |
+| WSL tidak terinstall | Medium | Low | F032/F033 gracefully disabled. Notch tetap berfungsi untuk media + awareness dasar. |
+| Fullscreen false-positive (Netflix di window) | Medium | Low | Test matrix: Chrome fullscreen, YouTube fullscreen, Netflix app. Summary card opt-in. |
+| Tracking false-positive (VS Code window title = "Instagram" karena buka file instagram.js) | Medium | Medium | Regex whitelist strict. Log every categorization. Config custom patterns. |
+| User merasa "diawasi" | Medium | High | Config default: **tracking off untuk v1.0**. Opt-in eksplisit. README jelas: "ini untuk kamu, bukan untuk kami". |
+| WSL hook security (local port open) | Low | High | Token auth. Port random. Bind ke 127.0.0.1 only. |
+| Battery drain dari tracking polling | Medium | Medium | Poll 5s, bukan 2s. Config interval. |
+
+**Major risk yang perlu di-highlight: USER FEELING WATCHED.**
+
+Ini bukan technical risk, tapi **ethical risk**. Kalau user merasa ini spyware, project gagal. Mitigasi:
+- **Default: awareness OFF di v1.0.** User harus explicit enable di config.
+- README jelas: "data tidak keluar dari laptop. Semua local."
+- Dashboard (v1.1) akan show exactly apa yang dilacak.
+- No upload, no telemetry, no analytics.
+
+--------------------------------------------------------------------------------
+A13. WHAT V1 SOLVES / DOESN'T SOLVE
+--------------------------------------------------------------------------------
+
+**Solved di V1:**
+
+1. **Skip lagu tanpa Alt-Tab** → F001+F002+F003
+2. **Glanceable tanpa hover** → F023 (Title Peek)
+3. **Async task selesai → notified** → F032+F033 (WSL hook)
+4. **Sadar berapa lama di social** → F034 (Tiny Timer)
+5. **Fullscreen tidak ganggu, tapi aware** → F008 + summary card
+6. **Gaming fully respected** → F035 (gaming_apps config)
+
+**NOT solved di V1:**
+
+1. **Title parsing 100% akurat** → butuh browser extension. v1.1 (F036).
+2. **Detailed time report (harian/mingguan)** → butuh persistent storage. v1.1 (F037).
+3. **Custom thresholds per app** (misal IG = 15 min, YouTube = 30 min) → v1.1 (F038).
+4. **Tracking di native apps** (WhatsApp desktop, Telegram) → title parsing Win32 workable, tapi tidak seakurat browser. v1.1.
+5. **App categorization yang sangat akurat** → Win32 heuristic + config. v1.1 bisa tambah database app names.
+6. **Battery impact zero** → tidak mungkin dengan WebView2. Honest.
+
+**Explicitly not solved ever:**
+
+- **Parental control / screen time enforcement.** WinNotch = awareness, bukan nanny.
+- **Billing-grade time tracking.** ~90% accuracy cukup untuk awareness, tidak untuk billing.
+- **Cloud sync.** Offline-first by design.
+
+**Filosofi V1:**
+
+V1 menyelesaikan **3 masalah utama** (media + async + social scrolling)
+dengan solusi yang **jujur, personal, dan tidak mengganggu.** Yang tidak
+solved → v1.1+ dengan alasan jelas. Tidak ada overclaim.
+
+================================================================================
+PART B — BEHAVIOR
+================================================================================
+
+--------------------------------------------------------------------------------
+B1. STATE MACHINE (S0–S8)
+--------------------------------------------------------------------------------
+
+(State machine tetap sama seperti PRD v1.2, dengan tambahan awareness
+variants yang tidak mengubah S0-S8, hanya mengubah konten dalam S1.)
+
+**Canonical State List**
+
+| ID | State Name | Description |
+|----|------------|-------------|
+| S0 | BOOT | App start |
+| S1 | IDLE_COLLAPSED | Capsule small, no hover. **Awareness-aware**: icon can be ♪, •, or 20:15 timer (F034) |
+| S2 | EXPANDED_MEDIA | Capsule large, media info + controls |
+| S3 | EXPANDED_EMPTY | Capsule large, no media (clock/icon) |
+| S4 | PINNED_EXPANDED | Like S2/S3 but pinned |
+| S5 | FIRST_RUN_TOOLTIP | One-time tooltip + WSL setup wizard |
+| S6 | HIDDEN | Window hidden via tray |
+| S7 | TERMINATING | Quit process |
+| S8 | ERROR_SOFT | Internal fallback |
+
+**S1 Variants (awareness-aware)**
+
+S1 adalah state yang paling banyak perubahan konten:
+
+| Sub-state | Icon | Trigger | Duration |
+|-----------|------|---------|----------|
+| S1a | ♪ | No media, no tracking | — |
+| S1b | ⏸ / ▶ | Media paused/playing | — |
+| S1c | 20:15 (tiny timer) | Foreground = social app | While in social |
+| S1d | ⚠ (orange) | 40+ min social | While in social |
+| S1e | 🔴 (red, pulse 1x) | 60+ min social | 5s pulse, back to S1d |
+| S1f | Marquee "OpenCode done — 4m" | Async task complete | 1.5s |
+| S1g | Marquee "New track — Artist" | Track change (F023) | 1.5s |
+
+**S1 variants tidak mengubah state machine** — hanya mengubah konten
+ikon di dalam kapsul. Transisi tetap S1 ↔ S2/S3, S1 ↔ S4, dll.
+
+**State Transition Table**
+
+| From | Event | To |
+|------|-------|-----|
+| S0 | Init | S1 or S5 |
+| S1 | Hover | S2 (media) or S3 (empty) |
+| S2/S3 | Mouse leave (debounce) | S1 |
+| S2/S3 | Click capsule | S4 |
+| S4 | Click/ESC | S1 |
+| S2/S3/S4 | Media ends | S3 or S1 |
+| Any | Tray → Hide | S6 |
+| S6 | Tray → Show | S1 |
+| Any | Tray → Quit | S7 |
+| Any | Fullscreen detected (F008) | Hidden (not S6, auto) |
+| S1 | Async task event | S1f (marquee 1.5s, stay S1) |
+| S1 | Track change | S1g (marquee 1.5s, stay S1) |
+| Exit fullscreen | Summary needed | Auto-expand 3s (S2 variant) → collapse |
+
+**New transition detail — Summary Card on fullscreen exit:**
+
+- Exit fullscreen → S2 (expanded) dengan konten summary card
+- Auto-collapse 3s (timer) → S1
+- Tidak pinned, tidak interactive (klik = collapse manual)
+
+--------------------------------------------------------------------------------
+B2. MULTI-SESSION SMTC RULE
+--------------------------------------------------------------------------------
+
+(Tetap sama seperti PRD v1.2 — tidak ada perubahan.)
+
+Rule: >1 media session aktif → pilih yang **most recently active**
+(playback_status change atau metadata update paling baru). Rust track
+`last_active_ts` per session.
+
+--------------------------------------------------------------------------------
+B3. WIREFRAMES (S1–S5 + Awareness Variants)
+--------------------------------------------------------------------------------
+
+(5 wireframe utama tetap sama seperti PRD v1.2. Tambahan awareness variants.)
+
+**WIREFRAME 1 — S1 IDLE_COLLAPSED**
+
+Variant S1a (no media, no tracking):
+        ┌──────────────────┐
+        │  •               │
+        └──────────────────┘
+
+Variant S1b (media playing):
+        ┌──────────────────┐
+        │  ♪               │
+        └──────────────────┘
+
+Variant S1c (in social app, <20 min):
+        ┌──────────────────┐
+        │  08:15           │
+        └──────────────────┘
+
+Variant S1d (in social app, 40-59 min):
+        ┌──────────────────┐
+        │  42:30  (orange) │
+        └──────────────────┘
+
+Variant S1e (in social app, 60+ min, pulse 1x):
+        ┌──────────────────┐
+        │  63:10  (red)    │ ← pulse animation 1x
+        └──────────────────┘
+
+Variant S1f (async task complete, marquee 1.5s):
+        ┌───────────────────────┐
+        │ OpenCode done — 4m 32s│ ← marquee
+        └───────────────────────┘
+
+Variant S1g (track change, marquee 1.5s — F023):
+        ┌───────────────────────┐
+        │ Bohemian Rhapsody — Q │ ← marquee
+        └───────────────────────┘
+
+**WIREFRAME 2-5 — S2, S3, S4, S5**
+
+(Tetap sama seperti PRD v1.2. Tidak ada perubahan.)
+
+**WIREFRAME 6 — FULLSCREEN SUMMARY CARD (baru)**
+
+Saat exit fullscreen (Netflix/anime), auto-expand 3s:
+
+┌──────────────────────────────────────────────┐
+│  🎬 Netflix                                  │
+│                                              │
+│  Session: 2j 15m                             │
+│                                              │
+│  [break 5 menit]  [lanjut]                   │
+└──────────────────────────────────────────────┘
+
+(Auto-collapse 3s. Klik [break 5 menit] = tampilkan 5 min countdown
+di S1. Klik [lanjut] = collapse. Tidak klik = collapse otomatis.)
+
+**Element Inventory (Update)**
+
+| ID | Element | Appears In | Interactive |
+|----|---------|------------|-------------|
+| E01-E13 | (tetap dari PRD v1.2) | — | — |
+| E14 | Tiny Timer text | S1c, S1d, S1e | no |
+| E15 | Timer color indicator | S1d (orange), S1e (red) | no |
+| E16 | Async task marquee text | S1f | no |
+| E17 | Summary card title | Fullscreen summary | no |
+| E18 | Summary duration text | Fullscreen summary | no |
+| E19 | Summary action button (break) | Fullscreen summary | yes |
+| E20 | Summary action button (lanjut) | Fullscreen summary | yes |
+
+--------------------------------------------------------------------------------
+B4. INTERACTION MAP
+--------------------------------------------------------------------------------
+
+(Tetap sama seperti PRD v1.2, dengan tambahan awareness interaction.)
+
+| Action | State | Effect | IPC/Logic |
+|--------|-------|--------|-----------|
+| (Awareness) Foreground = social app | S1 | Icon → Tiny Timer | local polling |
+| (Awareness) Timer reaches 40 min | S1 | Timer → orange | local |
+| (Awareness) Timer reaches 60 min | S1 | Timer → red + pulse 1x | local |
+| (Awareness) Async task completes | S1 | Marquee 1.5s | shell hook → local |
+| (Awareness) Exit fullscreen | S2 (auto) | Summary card 3s | local |
+| (Awareness) Click [break 5 menit] | Fullscreen summary | S1 + 5 min countdown | local |
+| (Awareness) Click [lanjut] | Fullscreen summary | S1 (collapse) | local |
+| (Awareness) Game detected (F035) | S6 (silent hidden) | No tracking, no notify | config |
+
+--------------------------------------------------------------------------------
+B5. DESIGN TOKENS
+--------------------------------------------------------------------------------
+
+(Tetap sama seperti PRD v1.2, dengan tambahan untuk awareness.)
+
+**Colors (Addition)**
+
+- Tiny Timer normal: #F5F5F7 (white)
+- Tiny Timer warning (40+ min): #FF9500 (iOS orange)
+- Tiny Timer alert (60+ min): #FF3B30 (iOS red)
+- Summary card background: rgba(20, 20, 24, 0.95) (same as capsule)
+
+**Typography (Addition)**
+
+- Tiny Timer: 11px monospace, weight 500
+- Summary title: 13px, weight 500
+- Summary duration: 11px, weight 400, secondary
+- Summary button: 11px, weight 500, accent color
+
+**Motion (Addition)**
+
+- Tiny Timer pulse: 1x 500ms scale 1.0 → 1.1 → 1.0
+- Summary card auto-collapse: 3s visible, then 150ms collapse
+- Async marquee: same as Title Peek (1.5s, easing cubic-bezier)
+
+**Awareness Thresholds**
+
+- Tiny Timer normal: 0-19 min
+- Warning (orange): 20-59 min
+- Alert (red): 60+ min
+- Config: `thresholds_minutes: [20, 40, 60]` (user can override)
+
+================================================================================
+PART C — TECHNICAL
+================================================================================
+
+--------------------------------------------------------------------------------
+C1. TECH STACK DECISION (LOCKED)
+--------------------------------------------------------------------------------
+
+Final Choice: Tauri v2 (no change from v1.2)
+
+(Rationale tetap sama — lihat D3-06 di Decision Log.)
+
+Evaluated and Rejected: egui, wry+tao, Direct2D native.
+
+--------------------------------------------------------------------------------
+C2. ARCHITECTURE
+--------------------------------------------------------------------------------
+
+**Updated Component Diagram**
+
+┌──────────────────────────────────────────────────────────┐
+│  Tauri WebView (Frontend)                                │
+│  - Capsule UI, hover animation, marquee                  │
+│  - Tiny Timer display                                    │
+│  - Summary card                                          │
+└──────────────────────┬───────────────────────────────────┘
+                       │ Tauri IPC
+┌──────────────────────▼───────────────────────────────────┐
+│  Rust Backend                                             │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │  SMTC Adapter (windows crate)                       │ │
+│  └─────────────────────────────────────────────────────┘ │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │  Foreground Tracker (F030) — poll every 2-5s        │ │
+│  │  - GetForegroundWindow via Win32                    │ │
+│  │  - GetWindowText → title parsing → categorize       │ │
+│  └─────────────────────────────────────────────────────┘ │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │  Session Timer (F031) — track duration per app      │ │
+│  └─────────────────────────────────────────────────────┘ │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │  WSL Hook Listener (F032) — localhost HTTP server   │ │
+│  │  - Token auth                                       │ │
+│  │  - Accept async task notification from WSL          │ │
+│  └─────────────────────────────────────────────────────┘ │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │  Async Task Notifier (F033) — emit marquee event    │ │
+│  └─────────────────────────────────────────────────────┘ │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │  App Categorizer (F035) — config-based rules        │ │
+│  └─────────────────────────────────────────────────────┘ │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │  Window/Tray Manager (tetap)                        │ │
+│  └─────────────────────────────────────────────────────┘ │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │  Config Manager (tetap, tambah awareness fields)    │ │
+│  └─────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────┘
+
+**Data Flow (Awareness)**
+
+1. Foreground Tracker poll 2-5s → window title.
+2. Title Parser → category (social / streaming / gaming / work / unknown).
+3. Session Timer: kalau category berubah, reset timer. Kalau sama, increment.
+4. Timer > threshold → emit event ke frontend → frontend update icon color.
+5. WSL Hook Listener: terima POST dari shell → emit "async task complete" → frontend marquee.
+
+--------------------------------------------------------------------------------
+C3. IPC CONTRACT
+--------------------------------------------------------------------------------
+
+(Tetap sama seperti PRD v1.2 + awareness events.)
+
+**Frontend → Rust (commands)**
+
+(Tetap dari PRD v1.2, no change.)
+
+**Rust → Frontend (events)**
+
+| Event | Payload | When |
+|-------|---------|------|
+| media_state_changed | (tetap) | SMTC update |
+| config_loaded | (tetap, + awareness fields) | Boot |
+| soft_error | (tetap) | Error |
+| fullscreen_changed | (tetap) | Fullscreen state change |
+| **session_changed** | { category, app_name, window_title, elapsed_seconds } | Foreground change |
+| **timer_threshold** | { category, elapsed_seconds, threshold_level } | Threshold crossing (20/40/60) |
+| **async_task_complete** | { source: "opencode\|cline\|manual\|e2e", duration_seconds, exit_code } | WSL shell hook |
+
+--------------------------------------------------------------------------------
+C4. CONFIG SCHEMA (UPDATED)
+--------------------------------------------------------------------------------
+
+```json
+{
+  "monitor_offset_x": 0,
+  "monitor_offset_y": 8,
+  "first_run_completed": false,
+  "track_change_display": "marquee",
+  "version": 2,
+  "awareness": {
+    "enabled": false,
+    "wsl_hook_enabled": false,
+    "wsl_hook_token": "auto-generated-uuid",
+    "wsl_hook_port": 9182,
+    "poll_interval_seconds": 5,
+    "social_apps": [
+      "instagram", "tiktok", "twitter", "x.com",
+      "facebook", "reddit", "threads"
+    ],
+    "streaming_apps": [
+      "netflix", "youtube.com/watch", "disney+", "prime video",
+      "bilibili"
+    ],
+    "gaming_apps": [
+      "WutheringWaves.exe", "steam.exe", "epicgameslauncher.exe"
+    ],
+    "work_apps_whitelist": [
+      "Code.exe", "devenv.exe", "sublime_text.exe", "idea64.exe"
+    ],
+    "thresholds_minutes": [20, 40, 60],
+    "tiny_timer_enabled": true,
+    "fullscreen_summary_enabled": true,
+    "async_notify_enabled": true,
+    "async_notify_min_duration_seconds": 10
+  }
+}
+Field Reference (Awareness)
+
+Field	Default	Meaning
+awareness.enabled	false	OPT-IN. User must enable manually.
+wsl_hook_enabled	false	Enable WSL shell hook listener
+wsl_hook_token	auto-generated	Auth token for shell hook
+wsl_hook_port	9182	Localhost port
+poll_interval_seconds	5	Foreground poll
+social_apps	[...]	Regex patterns for social detection
+streaming_apps	[...]	Regex patterns for streaming
+gaming_apps	[...]	Exact exe names to ignore totally
+work_apps_whitelist	[...]	Never trigger awareness
+thresholds_minutes	[20,40,60]	Timer color thresholds
+tiny_timer_enabled	true	Show timer in social apps
+fullscreen_summary_enabled	true	Show summary after fullscreen
+async_notify_enabled	true	Enable async task notifications
+async_notify_min_duration_seconds	10	Ignore task < 10s
+Behavior:
+
+Default awareness OFF. User enables explicit.
+
+Atomic write on quit.
+
+If corrupt → use defaults + log warning.
+
+C5. HIT-TESTING & CLICK-THROUGH STRATEGY
+
+(Tetap sama seperti PRD v1.2. Phase 0 Spike validate ini.)
+
+C6. SECURITY POSTURE
+
+(Tetap sama + WSL hook security.)
+
+WSL Hook Security (New)
+
+Port: 127.0.0.1 only (bind explicit, tidak ke 0.0.0.0)
+
+Token: UUID v4 generated at install, stored in config.json
+
+Auth: X-Notch-Token: <uuid> header required on every POST
+
+Rate limit: 100 req/min per token (prevent spam)
+
+Payload validation: JSON schema, max 1KB
+
+No data persistence: notifications are transient, not logged to disk
+
+Kalau token leaked: user regenerate via config + restart
+
+Privacy Note (README)
+
+"Semua tracking adalah local. Tidak ada data yang dikirim keluar."
+
+"Config file berisi app names yang dilacak — kamu bisa lihat apa yang dilacak."
+
+"Tidak ada network call selain localhost WSL hook."
+
+C7. FAILURE MODES & RECOVERY
+
+(Tetap dari PRD v1.2 + awareness failures.)
+
+Failure	Detection	Recovery
+WSL hook listener crash	Internal panic	Restart listener, log, emit soft_error
+WSL shell hook HTTP fail	curl exit != 0	Silent, log to /tmp/wsl_hook.log
+Title parsing ambiguous	Category = unknown	Use previous category until confident
+Foreground tracker slow	Poll > interval * 2	Increase interval adaptive
+Timer overflow (>24h)	elapsed > 86400	Reset to 0, log warning
+Config corrupt (awareness)	JSON parse fails	Defaults (awareness OFF)
+User enables tracking but no WSL	Hook listener start fail	Silent warn, F032 disabled
+C8. FOREGROUND TRACKING (F030-F035)
+
+F030 — Foreground Poll
+
+Interval: 5s default (config: 2-5s).
+
+API: windows crate GetForegroundWindow + GetWindowTextW.
+
+Extract: process.exe + window_title.
+
+Emit session_changed event on change.
+
+Title Parsing Strategy
+
+For browser windows: window title = "Page Title - Browser Name".
+Extract page title.
+
+Match against regex patterns from config (case-insensitive).
+
+Order: gaming_apps (exact exe) → work_whitelist (exact exe) →
+social_apps (regex) → streaming_apps (regex) → unknown.
+
+F031 — Session Timer
+
+Track (app_id, start_time) in memory.
+
+Reset on change.
+
+Emit timer_threshold when crossing 20/40/60 min.
+
+Reset at day boundary (midnight) or on user logout.
+
+F034 — Tiny Timer Display
+
+Only when category = social AND foreground app is browser.
+
+Frontend shows timer in S1 icon (replaces ♪/•).
+
+Color: white (0-19), orange (20-59), red (60+).
+
+Pulse 1x on red transition.
+
+F035 — App Categorization
+
+Config-based rules (lihat C4 schema).
+
+Fallback: unknown category (no tracking, no timer).
+
+User can extend via config.
+
+False-positive handling
+
+Title "instagram.js - Visual Studio Code" → whitelist Code.exe prevents false trigger.
+
+Test case: 20 manual sessions, log every categorization.
+
+Kalau akurasi < 85%, README jelas: "Title parsing heuristic, bisa salah."
+
+C9. WSL SHELL HOOK (F032)
+
+Setup
+
+Installer akan:
+
+Generate token (UUID v4).
+
+Save to config.
+
+Print 3 lines to paste into .bashrc.
+
+User paste:
+
+bash
+# WinNotch async task notify
+__notch_notify() {
+  local exit_code=$?
+  local duration=$SECONDS
+  if [ $duration -gt 10 ]; then
+    curl -s -X POST "http://127.0.0.1:9182/notch/notify" \
+      -H "X-Notch-Token: $(cat ~/.winnotch-token)" \
+      -d "{\"source\":\"$1\",\"duration_seconds\":$duration,\"exit_code\":$exit_code}" \
+      > /dev/null 2>&1
+  fi
+}
+
+__notch_wrap() {
+  local source=$1
+  shift
+  local start=$SECONDS
+  "$@"
+  local exit_code=$?
+  local duration=$((SECONDS - start))
+  if [ $duration -gt 10 ]; then
+    curl -s -X POST "http://127.0.0.1:9182/notch/notify" \
+      -H "X-Notch-Token: $(cat ~/.winnotch-token)" \
+      -d "{\"source\":\"$source\",\"duration_seconds\":$duration,\"exit_code\":$exit_code}" \
+      > /dev/null 2>&1
+  fi
+  return $exit_code
+}
+Usage
+
+opencode run "..." → wrapped via alias: alias opencode='__notch_wrap opencode opencode'
+
+Manual: __notch_wrap build npm run build
+
+E2E: __notch_wrap e2e npm run test:e2e
+
+Limitation
+
+Hanya works untuk commands yang di-wrap.
+
+Auto-wrap known commands via .bashrc aliases (opencode, cline, npm, cargo).
+
+Commands unknown but long (misal python script) → user wrap manual.
+
+Fallback (if shell hook too fragile for user)
+
+v1.1: better integration via process monitoring dari Windows.
+
+v1.1: CLI tool notch-notify yang bisa dipanggil dari mana saja.
+
+================================================================================
+PART D — EXECUTION
+================================================================================
+
+D1. PHASE 0 SPIKE + KILL CRITERIA
+
+Duration: 7 days (dari 5 hari karena tambahan awareness feasibility)
+
+Checklist
+
+ID	Spike Task	Success Criteria	Kill Criteria
+P0-S1	Base Tauri transparent window	Capsule top-center, no taskbar	Fail on Win10/11
+P0-S2	Hit-testing (capsule capture, margin pass-through)	Desktop icons clickable through margin	Both Option A & B fail
+P0-S3	Hover expand/leave animation	<80ms, 60 FPS	<45 FPS sustained
+P0-S4	SMTC read (title/artist/status)	Displays correctly	SMTC empty always
+P0-S5	SMTC control (play/pause/next/prev)	<100ms latency	Command no effect
+P0-S6	Marquee Title Peek (F023)	Smooth 1.5s	>5% CPU sustained
+P0-S7	Fullscreen detection	<500ms hide, restore	>20% false positive
+P0-S8	Tray + menu	Works	Tauri tray API fail
+P0-S9 (NEW)	Foreground tracking (F030)	GetForegroundWindow + title readable	Win32 API fail
+P0-S10 (NEW)	Title parsing accuracy	≥85% on 20 sessions	<85% (needs browser ext)
+P0-S11 (NEW)	WSL hook end-to-end	curl from WSL → notch marquee <500ms	Cannot bind port / auth fail
+P0-S12	RAM baseline	<100 MB idle, <130 MB active	>150 MB stable
+P0-S13	CPU baseline	~0% idle, <3% tracking+marquee	>5% sustained
+Kill Criteria (Top-Level)
+
+P0-S2 fails after 7 days → fallback (capsule-sized window) or pivot wry+tao.
+
+P0-S11 fails → drop F032/F033, focus media + Tiny Timer only.
+
+P0-S10 < 85% → Tiny Timer still workable, but document limitation clearly.
+
+Deliverable
+
+SPIKE_NOTES.md with real numbers (RAM, CPU, latency, hit-test result,
+title parsing accuracy %, WSL hook latency). Becomes portfolio evidence.
+
+D2. TESTING & ACCEPTANCE CHECKLIST
+
+(Tetap dari PRD v1.2 + awareness tests.)
+
+Awareness Tests (New)
+
+Test	Steps
+Tiny Timer trigger	Buka IG di Chrome → wait 20 min → icon jadi timer
+Timer color transition	Wait until 40 min → orange; 60 min → red + pulse
+Timer reset on app change	IG → VS Code → IG lagi → timer reset
+Async task notify (opencode)	opencode run "..." di WSL → marquee 1.5s "OpenCode done"
+Async task skip <10s	ls di WSL → no marquee
+Fullscreen summary	Netflix fullscreen 5 min → exit → summary "5m"
+Gaming escape	Wuthering Waves active → no tracking, no timer
+Title parsing accuracy	20 sessions Instagram/YouTube/VS Code → log categorize
+Config enable/disable	awareness=false → no tracking → verify no event
+Soak Test (24h)
+
+With awareness enabled + media playing.
+
+After 24h: RAM delta <10%, no crash, no leak.
+
+Log: total session changes, total notifications, total timer events.
+
+Acceptance Checklist
+
+□ All U1-U8 verified manually
+□ All A3 metrics met (or documented deviation)
+□ Title parsing accuracy logged (target ~90%)
+□ No BLOCKER bugs
+□ Soak test passed
+□ Decision Log complete
+□ Measurements (D4) populated
+D3. DECISION LOG
+
+(Tetap D3-01 sampai D3-11 dari PRD v1.2 + 3 entry baru.)
+
+D3-01 (2026-10-20) — Initial Scope — 4 fitur inti.
+D3-02 (2026-10-23) — UX Expansion — 15 + 1 baseline.
+D3-03 (2026-10-24) — F010 Context Menu CUT.
+D3-04 (2026-10-24) — F013 Volume CUT.
+D3-05 (2026-10-24) — F014 Keyboard Shortcut Pinned CUT.
+D3-06 (2026-10-28) — Tech Stack: Tauri v2. Evaluated egui, wry+tao, Direct2D. Rejected. Honest trade-off: RAM tidak match Nusa.
+D3-07 (2026-10-28) — Hit-testing: Phase 0 validates A vs B.
+D3-08 (2026-10-28) — CPU idle ~0% is NOT free.
+D3-09 (2026-10-28) — Positioning vs Nusa. UX micro-interaction, bukan clone.
+D3-10 (2026-10-28) — Scope 15+1 → 11 items.
+D3-11 (2026-10-28) — RAM framing honest, no overclaim.
+
+D3-12 (2026-10-28) — MAJOR PIVOT: Ambient Awareness Companion
+
+Decision: Pivot dari "media overlay" ke "ambient awareness companion".
+
+Rationale:
+
+Refleksi personal: masalah terbesar bukan skip lagu, tapi
+kehilangan diri di IG/YouTube sambil nunggu async task.
+
+Ini bukan sekadar "kebablasan scroll" — ini pola yang terjadi
+setiap hari, konsisten, dan mengganggu produktivitas secara nyata.
+
+Media layer tetap ada, tapi jadi komponen, bukan inti.
+
+Inti baru: notch yang tahu apa yang saya kerjakan, berapa lama,
+dan kapan async task selesai.
+
+Kompetitor shift:
+
+Nusa → competitor di media layer (masih relevan)
+
+RescueTime + ActivityWatch + ntfy → competitor di awareness layer
+
+Tidak ada yang menyatukan ketiganya di notch → gap nyata
+
+Impact:
+
+Scope 11 → 17 fitur (11 media + 6 awareness: F030-F035)
+
+Timeline 8-12 minggu (no deadline, chill)
+
+4 milestone (M1-M4), setiap milestone shippable
+
+WSL shell hook = critical dependency untuk F032-F033
+
+Risk acknowledged:
+
+User bisa merasa "diawasi". Mitigasi: default OFF, opt-in explicit,
+no network, README jelas.
+
+Title parsing ~90% (bukan 100%). Documented as known limitation.
+
+D3-13 (2026-10-28) — Title Parsing via Win32 (Bukan Browser Extension)
+
+Decision: V1 pakai Win32 GetWindowText + regex patterns. Browser
+extension = v1.1 (F036).
+
+Rationale:
+
+Browser extension = additional development + user friction (install
+extension per browser).
+
+Win32 parsing = ~90% accuracy, cukup untuk awareness (bukan billing).
+
+Config-based regex patterns = user dapat customize sendiri.
+
+Kalau akurasi < 85% di Phase 0, reconsider.
+
+Honest limitation:
+
+Tidak 100%. Custom page title = miss.
+
+Native apps (WhatsApp desktop, Telegram) = less accurate.
+
+Documented in A13.
+
+D3-14 (2026-10-28) — WSL Shell Hook with Token Auth
+
+Decision: WSL async task notification via shell hook + localhost HTTP
+dengan token auth.
+
+Rationale:
+
+WSL jalan di Linux subsystem, tidak bisa dimonitor dari Windows
+process list.
+
+Shell hook = 1 line di .bashrc, setup wizard otomatis.
+
+Token auth = prevent spam dari proses lain.
+
+Security:
+
+Bind 127.0.0.1 only
+
+Rate limit 100/min
+
+Payload max 1KB
+
+Fallback:
+
+Kalau user tidak punya WSL → F032/F033 gracefully disabled.
+
+Kalau shell hook fragile → v1.1 alternative (process monitor).
+
+Risk acknowledged:
+
+User friction (edit .bashrc, walau auto by installer).
+
+Bash version differences (mitigate: setup wizard checks).
+
+D3-15 (2026-10-28) — Fullscreen: Hidden + Summary on Exit
+
+Decision: Fullscreen → capsule hidden total (tidak ganggu immersion).
+Exit → summary card 3s.
+
+Rationale:
+
+Opsi "compact visible saat fullscreen" akan ganggu HUD game + subtitle.
+
+Opsi "never hide" = tidak bisa main game/nonton dengan tenang.
+
+Summary on exit = aware setelah, tanpa ganggu during.
+
+Gaming = total escape via config gaming_apps.
+
+User comfort:
+
+Zero judgement dalam summary ("kamu terlalu lama" → NO).
+
+Auto-collapse 3s (tidak perlu klik).
+
+[break 5 menit] = optional, user choice.
+
+D3-16 (2026-10-28) — Awareness Default OFF (Ethical)
+
+Decision: awareness.enabled: false default. User explicit opt-in.
+
+Rationale:
+
+Ethical: user harus tahu ini aktif sebelum tracking jalan.
+
+Bukan spyware. Bukan parental control. Ini self-awareness tool.
+
+README jelas: "data tidak keluar dari laptop. Semua local."
+
+Kalau user tidak enable → notch tetap berfungsi untuk media saja.
+
+Impact:
+
+First-run wizard akan tawarkan "Enable awareness tracking? [Yes/No]"
+
+Kalau no → media only mode
+
+Kalau yes → media + awareness
+
+D4. MEASUREMENTS / EVIDENCE
+
+Placeholder — diisi setelah Phase 0 + M1.
+
+Metric	Target	Actual (TBD)
+RAM idle	< 100 MB	[TBD]
+RAM with tracking + marquee	< 130 MB	[TBD]
+CPU idle	~0%	[TBD]
+CPU tracking + marquee	< 3%	[TBD]
+Startup	< 1s	[TBD]
+Media control latency	< 100ms	[TBD]
+Hover expand delay	< 80ms	[TBD]
+Title parsing accuracy	~90%	[TBD]
+WSL hook latency	< 500ms	[TBD]
+Fullscreen detect latency	< 500ms	[TBD]
+Soak test 24h memory delta	< 10%	[TBD]
+Hit-testing option used	A or B	[TBD]
+Update Process
+
+Setelah Phase 0 + M1: fill actuals, attach SPIKE_NOTES.md reference.
+Copy to README for portfolio.
+
+D5. ACCEPTANCE & SIGN-OFF
+
+Role	Name	Date	Signature
+Product Owner	M. Arif Aulia	2026-10-28	✅
+Macro Reviewer	DeepSeek	2026-10-28	✅
+Micro Reviewer	Gemini	2026-10-28	✅
+Review Notes
+
+Positioning locked: Ambient awareness companion (media + async task + time awareness).
+
+Tech stack locked: Tauri v2.
+
+Scope locked: 17 fitur (11 media + 6 awareness).
+
+Awareness default OFF (ethical).
+
+Phase 0 Spike mandatory (7 days, validate hit-testing + tracking + WSL hook).
+
+Decision Log captures "why" behind pivot (D3-12).
+
+Honest about title parsing 90% and WSL hook friction.
+
+Lock Statement
+
+PRD v1.3 LOCKED. Perubahan berikutnya = version bump v1.4+ dengan alasan
+di Version History. Tidak ada scope creep.
+
+D6. GLOSSARY
+
+(Tetap dari PRD v1.2 + awareness terms.)
+
+Term	Definition
+SMTC	System Media Transport Controls
+MPRIS	Media Player Remote Interfacing Specification (Linux)
+Hit-testing	Determining which UI region receives mouse events
+WM_NCHITTEST	Win32 message for hit-testing
+Foreground window	Currently focused window
+Title parsing	Extract app/page info from window title
+WSL	Windows Subsystem for Linux
+Shell hook	Trap/function in .bashrc to notify on command completion
+Async task	Long-running task (build, test, AI agent)
+Tiny Timer	WinNotch-specific — timer display in collapsed capsule
+Summary card	WinNotch-specific — post-fullscreen session summary
+Title Peek	WinNotch-specific — marquee title 1.5s on track change
+Pin State	WinNotch-specific — capsule stays expanded on mouse leave
+Kill criteria	Condition that triggers pivot/fallback
+Opt-in tracking	Awareness disabled by default, user must enable
+D7. VERSION HISTORY
+
+Version	Date	Author	Changes
+1.0	2026-10-20	Arif	Initial PRD (4 fitur)
+1.1	2026-10-23	Arif	+ UX Contract, + 16 fitur
+1.2	2026-10-28	Arif	Merge of all docs, tech stack Tauri v2, scope 11 items, Nusa positioning
+1.3	2026-10-28	Arif	MAJOR PIVOT to Ambient Awareness Companion. + 6 awareness fitur (F030-F035: foreground tracking, session timer, WSL hook, async notify, Tiny Timer, categorization). Scope 11 → 17. Narrative style. A13 "What V1 Solves / Doesn't Solve". Awareness default OFF (ethical). Decision Log D3-12..D3-16.
+================================================================================
+END OF WinNotch MASTER PRD v1.3
+================================================================================
+
+✅ Single-document spec
+✅ Positioning: Ambient awareness companion
+✅ Scope: 17 fitur (11 media + 6 awareness)
+✅ Tech stack: Tauri v2 (locked)
+✅ Awareness default OFF (ethical opt-in)
+✅ Honest about title parsing 90%, WSL hook friction, RAM trade-off
+✅ Phase 0 Spike: 7 days, validates hit-testing + tracking + WSL hook
+✅ Decision Log: 16 entries (portfolio gold)
+✅ Narrative style di PART A
+✅ Measurements: placeholder for real numbers
+
+Next: Phase 0 Spike (7 days) → fill D4 → begin M1 (F001+F002+F007+F018+F030).
+
+Locked. Gas Phase 0.
+================================================================================
+
+text
+
+---
+
+## Catatan singkat setelah draft
+
+**Yang berubah dari v1.2:**
+- **Positioning:** "media overlay" → **"ambient awareness companion"**
+- **Scope:** 11 → **17 fitur** (11 media + 6 awareness: F030-F035)
+- **Timeline:** 4-6 minggu → **8-12 minggu** (no deadline)
+- **Awareness default OFF** — ethical opt-in, bukan spyware
+- **WSL shell hook** dengan token auth — security concern addressed
+- **Fullscreen summary card** on exit (F008 extension)
+- **Gaming escape** via config `gaming_apps`
+- **Title parsing honest 90%** — documented as known limitation
+- **A13 "What V1 Solves / Doesn't Solve"** — honest scope
+
+**Yang tetap dari v1.2:**
+- Tech stack Tauri v2 (locked)
+- State machine S0-S8 (dengan S1 variants untuk awareness)
+- Hit-testing Phase 0 Spike (plus tracking + WSL hook validation)
+- UX Contract U1-U8 (U8 = awareness non-intrusive)
+- Decision Log (16 entries)

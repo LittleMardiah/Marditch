@@ -1,0 +1,388 @@
+# HALAMAN (Wireframes) - WinNotch (Desktop Dynamic Island)
+# Version: v1.0
+# Created: 2026-10-20
+# Author: M. Arif Aulia
+# Status: Draft (untuk direview)
+# Companion: PRD.txt v1.1 | LOGIC_FLOW.txt v1.0 | Next: DESIGN.md
+
+---
+
+## 0. PURPOSE
+
+Dokumen ini mendefinisikan TAMPILAN VISUAL SEDERHANA (wireframe) untuk
+setiap state visual di LOGIC_FLOW.txt v1.0:
+- Struktur elemen (apa saja yang tampil)
+- Hierarki & posisi (di mana)
+- Interaksi visual (apa yang bisa di-hover / di-click)
+- Alur visual E2E (dari boot sampai quit)
+
+Dokumen ini TIDAK membahas:
+- Warna, font, ukuran exact, easing → DESIGN.md
+- Nilai pixel final, timing animation exact, dimensi window exact → TDD
+- Kode/CSS → implementasi
+
+Filosofi: Wireframe = "apa yang tampil dan di mana". BUKAN "bagaimana
+tampilannya (cantik atau tidak)".
+
+---
+
+## 1. DESIGN PRINCIPLES (wireframe level, bukan visual)
+
+| # | Principle | Konsekuensi Wireframe |
+|---|-----------|-----------------------|
+| P1 | Notch harus terasa "ringan" dan menyatu dengan atas layar | Posisi top-center, jarak dari tepi atas minimal |
+| P2 | Expand harus jelas, tidak ambigu | Ada perubahan ukuran & konten yang nyata |
+| P3 | Setiap elemen interaktif punya visual affordance | Tombol terlihat seperti tombol |
+| P4 | Tidak ada informasi palsu (battery, dsb. di V1) | Idle state hanya jam/ikon |
+| P5 | Pin state harus jelas terlihat | Pin indicator selalu terlihat saat S4 |
+| P6 | First-run tooltip sekali pakai | Ada mekanisme dismiss (klik/ESC/auto-hide) |
+
+---
+
+## 2. GLOBAL LAYOUT
+
+Posisi & layering (semua wireframe):
+┌─────────────────────────── SCREEN (primary monitor) ──────────────────────────┐
+│ │
+│ ┌──────────────┐ │
+│ │ CAPSULE │ ← top-center │
+│ └──────────────┘ ← Y offset (default: kecil) │
+│ │
+│ (desktop / apps / work) │
+│ │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+text
+
+- Anchoring: horizontal center, vertical = top edge + offset (configurable).
+- Window: frameless, transparent, always-on-top, skipTaskbar.
+- Z-index: selalu di atas window normal; tidak di atas fullscreen app (V1 limit).
+- Focus: window TIDAK mengambil fokus saat expand / click (U3).
+
+---
+
+## 3. WIREFRAME PER STATE
+
+Format: ASCII wireframe + element list + interaksi + mapping ke LOGIC_FLOW.
+Catatan ukuran = REFERENSI RELATIF, bukan angka final (final di TDD).
+
+---
+
+### WIREFRAME 1 — S1: IDLE_COLLAPSED
+**Mapping:** LOGIC_FLOW S1
+**Kapan:** Default state, tidak ada hover, tidak pinned, tidak first-run.
+┌──────────────────┐
+│ ♪ │ ← ikon status (media / no media)
+└──────────────────┘
+(kapsul kecil, ref: ~180 x 32)
+
+text
+
+**Elemen:**
+| ID | Element | Konten | Interaksi |
+|----|---------|--------|-----------|
+| E01 | Capsule container | bentuk kapsul | hover → expand; click → pin |
+| E02 | Status icon | ikon `♪` jika ada media; ikon `•` atau clock-mini jika tidak | (tidak interaktif) |
+
+**Interaksi:**
+- Hover capsule → transisi ke S2 (jika media) atau S3 (jika tidak).
+- Click capsule → transisi ke S4.
+- Tidak ada animasi terus-menerus (U4).
+
+**Tidak tampil di sini:** title, artist, tombol kontrol, pin indicator, tooltip.
+
+---
+
+### WIREFRAME 2 — S2: EXPANDED_MEDIA
+**Mapping:** LOGIC_FLOW S2
+**Kapan:** Hover di S1, ada session media aktif.
+┌──────────────────────────────────────────────┐
+│ [icon] Spotify [pin] │ ← row 1: source + pin affordance
+│ │
+│ ◀◀ ▶/⏸ ▶▶ Song Title │ ← row 2: controls + track info
+│ Artist Name │
+└──────────────────────────────────────────────┘
+(ref: ~320 x 80)
+
+text
+
+**Elemen:**
+| ID | Element | Konten | Interaksi |
+|----|---------|--------|-----------|
+| E01 | Capsule container | expand | hover out → S1 (jika tidak pinned); click → S4 |
+| E02 | Status icon | ikon app sumber (Spotify/Edge/VLC) | (tidak interaktif) |
+| E03 | Source app label | string "Spotify" / "Edge" / dll | (tidak interaktif) |
+| E04 | Pin affordance (idle) | ikon pin outline | (visual cue saja; klik capsule = pin) |
+| E06 | Prev button | ikon `◀◀` | click → IPC `prev` |
+| E07 | Play/Pause button | ikon `▶` atau `⏸` (sesuai status) | click → IPC `play_pause` |
+| E08 | Next button | ikon `▶▶` | click → IPC `next` |
+| E04a | Track title | text, truncated 1 baris | (tidak interaktif) |
+| E05 | Track artist | text, truncated 1 baris | (tidak interaktif) |
+
+**Interaksi:**
+- Hover out (dengan debounce 150–200ms) → S1.
+- Click capsule (bukan tombol) → S4 (pin).
+- Click tombol kontrol → kirim IPC, JANGAN ubah state visual (kecuali play/pause mengubah ikon E07).
+- Klik tombol tidak collapse ke S1 meskipun mouse keluar sesaat.
+
+**Catatan layout:** E03 (source) + E04a (title) + E05 (artist) adalah teks; harus punya truncation rule (ellipsis). Rule final di DESIGN.md.
+
+---
+
+### WIREFRAME 3 — S3: EXPANDED_EMPTY
+**Mapping:** LOGIC_FLOW S3
+**Kapan:** Hover di S1, TIDAK ada media; ATAU session berakhir saat expanded.
+┌──────────────────────────────────────────────┐
+│ [pin] │
+│ │
+│ 14:32 │ ← jam (atau ikon minimalis)
+│ │
+└──────────────────────────────────────────────┘
+(ref: ~320 x 80)
+
+text
+
+**Elemen:**
+| ID | Element | Konten | Interaksi |
+|----|---------|--------|-----------|
+| E01 | Capsule container | expand | hover out → S1; click → S4 |
+| E04 | Pin affordance (idle) | ikon pin outline | visual cue |
+| E10 | Clock display | jam (HH:MM), update per menit | (tidak interaktif) |
+
+**Interaksi:**
+- Sama seperti S2 untuk hover out dan pin.
+- Tidak ada tombol kontrol (karena tidak ada media).
+- Transisi dari S2 → S3 (session hilang) harus < 300ms, tanpa error mentah (U5).
+
+**Non-elements (eksplisit dilarang di V1):** battery indicator, CPU usage, weather, dsb.
+
+---
+
+### WIREFRAME 4 — S4: PINNED_EXPANDED
+**Mapping:** LOGIC_FLOW S4
+**Kapan:** User klik capsule dari S2 atau S3. State "dipin" — tidak collapse saat mouse leave.
+
+**4A — S4 dengan media (dari S2 → pin):**
+┌──────────────────────────────────────────────┐
+│ [icon] Spotify [pin●] │ ← pin terisi (aktif)
+│ │
+│ ◀◀ ▶/⏸ ▶▶ Song Title │
+│ Artist Name │
+└──────────────────────────────────────────────┘
+
+text
+
+**4B — S4 tanpa media (dari S3 → pin):**
+┌──────────────────────────────────────────────┐
+│ [pin●] │
+│ │
+│ 14:32 │
+│ │
+└──────────────────────────────────────────────┘
+
+text
+
+**Elemen (tambahan/delta dari S2 & S3):**
+| ID | Element | Konten | Interaksi |
+|----|---------|--------|-----------|
+| E09 | Pin indicator (active) | ikon pin filled | click → unpin (kembali ke S2/S3 lalu S1) |
+
+**Interaksi:**
+- Mouse leave → TIDAK collapse (beda dari S2/S3).
+- ESC → collapse + unpin → S1.
+- Click capsule (di luar tombol) → unpin → transisi ke S2 atau S3 (sesuai media state), lalu ke S1 (dengan debounce).
+- Click tombol kontrol → kirim IPC, tetap di S4.
+
+**Catatan:** S4 memenuhi UX Contract U1 (user selalu tahu cara dismiss: ESC / klik pin / klik capsule).
+
+---
+
+### WIREFRAME 5 — S5: FIRST_RUN_TOOLTIP
+**Mapping:** LOGIC_FLOW S5
+**Kapan:** Hanya sekali saat first launch (config: first_run = true). Setelah dismiss, tidak muncul lagi.
+┌─────────────────────────────────────┐
+│ Hover to expand · Click to pin · │
+│ ESC to close │
+└──────────────────┬──────────────────┘
+▼
+┌──────────────────┐
+│ ♪ │
+└──────────────────┘
+
+text
+
+**Elemen:**
+| ID | Element | Konten | Interaksi |
+|----|---------|--------|-----------|
+| E11 | Tooltip bubble | teks singkat, max 2 baris | click bubble → dismiss |
+| E12 | Tooltip arrow | panah ke capsule | (tidak interaktif) |
+| E01 | Capsule (di bawah tooltip) | sama seperti S1 | tetap interaktif |
+
+**Interaksi:**
+- Klik di mana saja pada tooltip / capsule → dismiss (set first_run = false, persist).
+- ESC → dismiss.
+- Auto-hide setelah 5 detik.
+- Setelah dismiss → S1 (tidak muncul lagi sampai user reset config manual).
+
+**Aturan konten:** teks harus ≤ 2 baris, ≤ 60 karakter per baris. Isi final di DESIGN.md (bukan wireframe).
+
+---
+
+## 4. VISUAL JOURNEY E2E (dari boot sampai quit)
+[BOOT]
+│
+▼
+S0 BOOT (non-visual: single-instance check, load config, spawn SMTC, tray)
+│
+├─ first_run == true ──▶ S5 (tooltip) ──[dismiss]──▶ S1
+│
+└─ first_run == false ─▶ S1 (collapsed)
+│
+├─ hover ─┬─ ada media ─▶ S2 (expanded media)
+│ └─ no media ─▶ S3 (expanded empty)
+│
+├─ click ─▶ S4 (pinned: S4A atau S4B)
+│ │
+│ ├─ ESC ─▶ S1
+│ ├─ click pin ─▶ S2/S3 ─▶ (debounce) ─▶ S1
+│ └─ mouse leave ─▶ STAY (tidak collapse)
+│
+├─ (S2/S3) mouse leave + debounce ─▶ S1
+│
+├─ (S2/S3/S4) media session ends ─▶ S3 atau S1
+├─ (S2/S3/S4) media session baru ─▶ S2 (update)
+│
+├─ tray → Hide ─▶ S6 (non-visual)
+│ └─ tray → Show ─▶ S1
+│
+└─ tray → Quit / Ctrl+Q ─▶ S7 (non-visual, persist, exit)
+│
+▼
+[EXIT]
+
+S8 (soft error) = internal fallback, tidak terlihat sebagai state visual.
+
+text
+
+---
+
+## 5. ELEMENT INVENTORY (semua elemen, satu tabel)
+
+| ID | Nama | Muncul di | Interaktif | Catatan |
+|----|------|-----------|-----------|---------|
+| E01 | Capsule container | S1, S2, S3, S4, S5 | ya (hover, click) | bentuk kapsul, frameless |
+| E02 | Status icon | S1, S2 | tidak | `♪` atau ikon app |
+| E03 | Source app label | S2, S4A | tidak | teks |
+| E04 | Pin affordance (idle) | S2, S3 | tidak (visual cue) | outline pin |
+| E04a | Track title | S2, S4A | tidak | truncation |
+| E05 | Track artist | S2, S4A | tidak | truncation |
+| E06 | Prev button | S2, S4A | ya | IPC `prev` |
+| E07 | Play/Pause button | S2, S4A | ya | IPC `play_pause`, ikon berubah |
+| E08 | Next button | S2, S4A | ya | IPC `next` |
+| E09 | Pin indicator (active) | S4A, S4B | ya | IPC `toggle_pin` (unpin) |
+| E10 | Clock display | S3, S4B | tidak | update per menit |
+| E11 | Tooltip bubble | S5 | ya (dismiss) | sekali pakai |
+| E12 | Tooltip arrow | S5 | tidak | panah ke capsule |
+
+---
+
+## 6. INTERACTION MAP (rangkuman)
+
+| Aksi user | State | Efek visual | IPC / Logic |
+|-----------|-------|-------------|-------------|
+| Hover capsule | S1 | expand → S2/S3 | (lokal) |
+| Mouse leave capsule | S2, S3 | collapse → S1 (debounce 150–200ms) | (lokal) |
+| Click capsule (di luar tombol) | S1 | pin → S4 | (lokal) |
+| Click capsule (di luar tombol) | S2, S3 | pin → S4 | (lokal) |
+| Click capsule (di luar tombol) | S4 | unpin → S2/S3 → (debounce) S1 | (lokal) |
+| Click tombol Prev | S2, S4A | tidak berubah state | `prev` |
+| Click tombol Play/Pause | S2, S4A | ikon toggle | `play_pause` |
+| Click tombol Next | S2, S4A | tidak berubah state | `next` |
+| Click pin indicator | S4A, S4B | unpin → S2/S3 → (debounce) S1 | `toggle_pin(false)` |
+| ESC | S4 | collapse → S1 | `toggle_pin(false)` |
+| Klik tooltip / capsule | S5 | dismiss → S1 | set first_run=false |
+| Tray → Hide | any | window hidden (S6) | `hide_window` |
+| Tray → Show | S6 | window shown → S1 | (lokal) |
+| Tray → Quit / Ctrl+Q | any | persist + exit (S7) | `quit_app` |
+
+**Aturan visual:** semua transisi state visual harus menggunakan properti
+GPU-accelerated (transform/opacity). Detail easing & durasi di DESIGN.md.
+
+---
+
+## 7. NON-VISUAL STATES (konfirmasi)
+
+State-state ini TIDAK punya wireframe karena tidak muncul sebagai visual:
+
+| State | Alasan Tidak Ada Wireframe |
+|-------|----------------------------|
+| S0 BOOT | Terjadi sebelum window tampil |
+| S6 HIDDEN | Window di-hide; tidak ada yang tampil |
+| S7 TERMINATING | Proses exit; tidak ada visual |
+| S8 ERROR_SOFT | Internal log/fallback; user tidak lihat |
+
+---
+
+## 8. MAPPING KE LOGIC_FLOW (validasi)
+
+| LOGIC_FLOW State | HALAMAN Wireframe | Status |
+|------------------|-------------------|--------|
+| S0 | — (non-visual) | ✅ eksplisit di §7 |
+| S1 | Wireframe 1 | ✅ |
+| S2 | Wireframe 2 | ✅ |
+| S3 | Wireframe 3 | ✅ |
+| S4 | Wireframe 4 (4A & 4B) | ✅ |
+| S5 | Wireframe 5 | ✅ |
+| S6 | — (non-visual) | ✅ eksplisit di §7 |
+| S7 | — (non-visual) | ✅ eksplisit di §7 |
+| S8 | — (non-visual) | ✅ eksplisit di §7 |
+
+Semua state visual di LOGIC_FLOW sudah punya wireframe. Tidak ada state
+visual baru yang ditambahkan di luar LOGIC_FLOW.
+
+---
+
+## 9. NON-GOALS (jangan masuk HALAMAN)
+
+- Warna, gradient, shadow, blur, border-radius exact → DESIGN.md
+- Font family & size → DESIGN.md
+- Ukuran pixel final & dimensi window → TDD
+- Animation easing & duration → DESIGN.md / TDD
+- Settings UI (tidak ada di V1)
+- Theme switcher (tidak ada di V1)
+- Battery / CPU widget (Phase 2/3)
+- Fullscreen behavior (Phase 2)
+- Android / Linux layout (backlog)
+
+---
+
+## 10. OPEN QUESTIONS (untuk DESIGN.md / TDD, bukan sekarang)
+
+1. Truncation rule untuk E04a/E05 (berapa karakter, ellipsis manual atau CSS) → DESIGN.md.
+2. Teks exact tooltip S5 (draft di sini boleh diganti) → DESIGN.md.
+3. Ukuran relatif final capsule collapsed vs expanded (rasio 180:32 vs 320:80 = ref) → TDD.
+4. Apakah pin indicator clickable juga saat S4 selain klik capsule? (rekomendasi: ya, biar jelas) → DESIGN.md UX decision.
+5. Apakah clock di S3 tampil format 24h atau 12h? (rekomendasi: ikut system locale) → TDD.
+6. Apakah ada micro-feedback (hover state tombol) — ya, tapi detail di DESIGN.md.
+
+---
+
+## 11. ACCEPTANCE UNTUK DOKUMEN INI
+
+- [x] Semua state visual di LOGIC_FLOW punya wireframe (S1–S5)
+- [x] Semua state non-visual eksplisit dinyatakan (S0, S6, S7, S8)
+- [x] Setiap wireframe punya element list (ID, konten, interaksi)
+- [x] Ada element inventory global (E01–E12)
+- [x] Ada interaction map (aksi → efek → IPC)
+- [x] Ada visual journey E2E
+- [x] Non-goals eksplisit
+- [x] Open questions dipindah ke DESIGN.md/TDD (tidak memblokir dokumen ini)
+- [x] Tidak ada warna/font/ukuran exact (itu DESIGN.md/TDD)
+
+---
+
+## VERSION HISTORY
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2026-10-20 | M. Arif Aulia | Initial wireframes: 5 visual states (S1–S5), element inventory, interaction map, visual journey E2E |

@@ -1,0 +1,279 @@
+# LOGIC FLOW - WinNotch (Desktop Dynamic Island)
+# Version: v1.0
+# Created: 2026-10-20
+# Author: M. Arif Aulia
+# Status: Draft (untuk direview)
+# Companion: PRD.txt v1.1 | Next: HALAMAN.txt
+
+---
+
+## 0. PURPOSE
+
+Dokumen ini mendefinisikan ALUR LOGIKA aplikasi WinNotch dari awal hingga akhir (E2E):
+- State apa saja yang ada
+- Transisi antar state dan pemicunya
+- Data/event yang mengalir (IPC)
+- Aturan keputusan (multi-session, no-session, fallback)
+
+Dokumen ini TIDAK membahas visual. Setiap state di sini WAJIB punya
+representasi visual di HALAMAN.txt. Jika sebuah state tidak ada di
+HALAMAN.txt, itu bug dokumen — bukan bug kode.
+
+---
+
+## 1. ACTORS & COMPONENTS
+
+| Komponen | Peran |
+|----------|-------|
+| User | Hover, click, tray menu, ESC, quit |
+| Frontend (WebView) | Render UI, kirim command via IPC, terima event dari Rust |
+| Rust Backend | Listen SMTC, kelola tray, baca/tulis config, hit-testing window |
+| Windows SMTC | Sumber metadata & target kontrol media |
+| config.json | Persistensi offset, first_run flag |
+
+---
+
+## 2. STATE LIST (canonical names)
+
+Setiap state punya ID yang sama dengan wireframe di HALAMAN.txt.
+
+| ID | State Name | Deskripsi Singkat |
+|----|------------|-------------------|
+| S0 | BOOT | App start, belum render window |
+| S1 | IDLE_COLLAPSED | Kapsul kecil top-center, tidak ada hover |
+| S2 | EXPANDED_MEDIA | Kapsul besar, tampil title/artist/control media aktif |
+| S3 | EXPANDED_EMPTY | Kapsul besar, tidak ada media — tampil jam/ikon minimalis |
+| S4 | PINNED_EXPANDED | Seperti S2/S3 tapi "dipin" — tidak collapse saat mouse leave |
+| S5 | FIRST_RUN_TOOLTIP | Overlay tooltip sekali jalan di atas S1 |
+| S6 | HIDDEN | Window disembunyikan via tray |
+| S7 | TERMINATING | Proses quit, persist config, cleanup |
+| S8 | ERROR_SOFT | Fallback internal (tidak terlihat user; log only) |
+
+CATATAN: S2 dan S3 adalah "isi" dari state expanded. S4 adalah mode
+persisten dari S2/S3. Jadi secara render, ada 2 bentuk besar:
+COLLAPSED (S1) dan EXPANDED (S2/S3/S4).
+
+---
+
+## 3. STATE TRANSITION TABLE
+
+| From | Event / Trigger | Condition | To |
+|------|-----------------|-----------|-----|
+| S0 | App initialized, config loaded | config valid / fallback | S1 |
+| S0 | config corrupt | — | S1 (pakai default) + log warning (S8) |
+| S1 | Mouse enter capsule | delay < 80ms | S2 (jika media aktif) / S3 (jika tidak) |
+| S1 | First run (first_run=true) | sekali saja | S5 |
+| S5 | User dismiss / timeout 5s | — | S1 (set first_run=false) |
+| S2 | Mouse leave capsule | debounce 150–200ms | S1 |
+| S3 | Mouse leave capsule | debounce 150–200ms | S1 |
+| S2 | Click capsule | — | S4 |
+| S3 | Click capsule | — | S4 |
+| S4 | Click capsule | — | S2 atau S3 (berdasar media state) |
+| S4 | ESC pressed | — | S1 |
+| S2 / S3 / S4 | Media session ends / hilang | — | S3 (jika EXPANDED) / S1 (jika collapsed) |
+| S2 / S3 / S4 | Media session baru aktif | — | S2 (update metadata, source_app) |
+| S1 / S2 / S3 / S4 | Tray → Hide | — | S6 |
+| S6 | Tray → Show | — | S1 (reset collapsed) |
+| Any | Tray → Quit / Ctrl+Q | — | S7 |
+| S7 | Config persisted | — | (exit process) |
+| Any | SMTC listener crash | internal | S8 (log, restart listener, kembali ke state semula) |
+
+Debounce rule:
+- Enter: immediate (no artificial delay, but must be < 80ms perceived)
+- Leave: 150–200ms delay to avoid flicker on rapid in/out
+
+---
+
+## 4. DETAILED FLOW PER STATE
+
+### S0 — BOOT
+1. Single-instance lock check (tauri-plugin-single-instance).
+   - Jika instance lain ada → fokus instance lama, exit.
+2. Baca config.json:
+   - Valid → pakai offset & first_run dari file.
+   - Hilang/corrupt → pakai default, set flag S8 log, tulis default saat exit.
+3. Spawn SMTC listener (Rust thread).
+4. Register system tray icon.
+5. Tampilkan window top-center (window TIDAK steal focus).
+6. if first_run == true → S5, else → S1.
+
+### S1 — IDLE_COLLAPSED
+- Render kapsul kecil.
+- Isi: ikon status (media / no media) — TIDAK animasi terus-menerus (U4).
+- Menunggu event: hover, click, tray, first-run (hanya jika belum selesai).
+
+### S2 — EXPANDED_MEDIA
+- Render: source_app, title, artist, tombol prev/play-pause/next.
+- Aktif jika Rust melaporkan ada session aktif.
+- Update metadata realtime saat media_state_changed masuk.
+- Click → S4.
+
+### S3 — EXPANDED_EMPTY
+- Render: jam (atau ikon minimalis).
+- TIDAK menampilkan baterai (out of scope V1).
+- Muncul saat: (a) tidak ada session, ATAU (b) session berakhir saat expanded.
+- Transisi dari S2 → S3 harus < 300ms dan tanpa error mentah (U5).
+
+### S4 — PINNED_EXPANDED
+- Sama seperti S2/S3, hanya beda perilaku: mouse leave TIDAK collapse.
+- Collapse hanya via: klik ulang, ESC.
+- Tujuan UX: user bisa baca/klik tombol tanpa "hilang" saat mouse geser.
+
+### S5 — FIRST_RUN_TOOLTIP
+- Muncul sekali di atas S1.
+- Dismiss: klik tooltip, ESC, atau auto-hide 5s.
+- Set first_run=false, persist ke config.
+
+### S6 — HIDDEN
+- Window di-hide (bukan destroy).
+- SMTC listener tetap jalan.
+- Tray menu tetap aktif.
+- Show → reset ke S1.
+
+### S7 — TERMINATING
+1. Persist config (atomic: tulis temp → rename).
+2. Stop SMTC listener thread.
+3. Exit process.
+- Jika persist gagal: log warning, tetap exit (jangan hang).
+
+### S8 — ERROR_SOFT (internal)
+- Bukan state visual. Hanya log + fallback.
+- Contoh: SMTC crash → restart listener, kembali ke state sebelumnya.
+- Contoh: config corrupt → pakai default.
+- User TIDAK melihat pesan error mentah (U5).
+
+---
+
+## 5. MEDIA SESSION LOGIC (SMTC)
+
+### 5.1 Sumber data
+- Rust listener mendengarkan SMTC:
+  - title, artist, playback_status, source_app
+  - session_id (internal)
+
+### 5.2 Multi-session rule (LOCKED dari PRD)
+- Jika > 1 session aktif:
+  - Pilih session dengan **aktivitas paling baru**
+    (definisi: perubahan playback_status atau metadata paling akhir).
+  - Rust menyimpan `last_active_ts` per session.
+- UI menampilkan `source_app` agar user tahu sumber yang dikontrol.
+- Jika hanya 1 session → langsung gunakan.
+
+### 5.3 Siklus media state
+| Kondisi | Aksi |
+|---------|------|
+| Ada session aktif | Emit `media_state_changed(has=true, ...)` → target S2 |
+| Tidak ada session | Emit `media_state_changed(has=false)` → target S3/S1 |
+| Session hilang saat playing | Emit has=false, transisi < 300ms ke S3 (jika expanded) |
+| Playback paused | Tetap tampil metadata, ikon jadi "play" |
+
+### 5.4 Batasan jujur
+- SMTC tidak menyediakan timestamp resmi "last active".
+  Rust harus track manual per session. Ini bagian tersulit F003.
+- Jika track manual gagal (race condition), fallback: pakai session
+  yang sedang `playing`; jika lebih dari satu playing, pilih yang
+  paling lama diketahui UI. Catat di log.
+
+---
+
+## 6. IPC CONTRACT (mini — detail final di TDD)
+
+### Frontend → Rust (commands)
+| Command | Payload | Response |
+|---------|---------|----------|
+| `get_media_state` | — | MediaState |
+| `play_pause` | — | ok / err |
+| `next` | — | ok / err |
+| `prev` | — | ok / err |
+| `toggle_pin` | boolean | ok |
+| `hide_window` | — | ok |
+| `quit_app` | — | ok (trigger S7) |
+
+### Rust → Frontend (events)
+| Event | Payload | Kapan |
+|-------|---------|-------|
+| `media_state_changed` | {has, title, artist, status, source_app} | Saat SMTC update |
+| `config_loaded` | {offset_x, offset_y, first_run} | Saat boot |
+| `soft_error` | {code, message} | Internal fallback (log only) |
+
+Semua command WAJIB di-whitelist di Rust (tidak ada eval, tidak ada
+dynamic command name). Validasi payload di sisi Rust sebelum eksekusi.
+
+---
+
+## 7. HIT-TESTING & WINDOW FLOW (Phase 0 risk)
+
+1. Window full transparent, frameless, always-on-top, skipTaskbar.
+2. Region kapsul → capture mouse.
+3. Region margin transparan → `setIgnoreCursorEvents(true)` → pass-through.
+4. Saat expand (S1 → S2/S3):
+   - Jika ukuran window ikut berubah → update hit-region SETELAH animasi
+     selesai (jangan per-frame).
+   - Jika ukuran window tetap (fallback) → hit-region tetap.
+5. Fokus window: TIDAK boleh berubah saat expand/click (U3).
+
+FALLBACK (jika S2 spike gagal):
+- Window seukuran kapsul saja, tanpa margin transparan.
+- Tidak ada pass-through. Tidak ada klik desktop di sekitar kapsul.
+- Semua state & transisi di atas TETAP BERLAKU; hanya hit-region yang beda.
+
+---
+
+## 8. MAPPING KE HALAMAN.txt
+
+Setiap state di atas WAJIB punya wireframe:
+
+| LOGIC_FLOW State | HALAMAN Wireframe (to be created) |
+|------------------|-----------------------------------|
+| S1 | Wireframe 1 — Collapsed Idle |
+| S2 | Wireframe 2 — Expanded with Media |
+| S3 | Wireframe 3 — Expanded No Media |
+| S4 | Wireframe 4 — Pinned Expanded (bisa reuse visual S2/S3 + indikator pin) |
+| S5 | Wireframe 5 — First-Run Tooltip (overlay di atas S1) |
+| S6 | Tidak perlu wireframe (window hidden) |
+| S0 / S7 / S8 | Tidak perlu wireframe (non-visual) |
+
+Jika HALAMAN.txt nanti menambah state visual baru, LOGIC_FLOW ini WAJIB
+diupdate. Jangan ada visual tanpa alur, dan jangan ada alur tanpa visual.
+
+---
+
+## 9. NON-GOALS (jangan masuk di V1)
+
+- Fullscreen app auto-hide (Phase 2)
+- Battery / CPU widget (Phase 2/3)
+- Drag-drop file zone (v1.1)
+- Settings UI (config file saja)
+- Theme system
+- Android / Linux adapter (backlog)
+- Database / cloud sync
+
+---
+
+## 10. OPEN QUESTIONS (untuk TDD, bukan sekarang)
+
+1. Ukuran exact capsule collapsed vs expanded → TDD.
+2. Field exact config.json → TDD (minimal: offset_x, offset_y, first_run).
+3. Mekanisme track last_active_ts per session → TDD (butuh eksperimen di Phase 0 S4/S5).
+4. Teknik hit-region update (window resize vs static window) → diputuskan setelah Spike S2.
+5. Logging: file atau stderr → TDD.
+
+---
+
+## 11. ACCEPTANCE UNTUK DOKUMEN INI
+
+- [x] Semua state punya ID unik yang dipakai di HALAMAN.txt
+- [x] Semua transisi punya trigger & condition
+- [x] Multi-session rule tertulis eksplisit
+- [x] Fallback hit-testing tertulis eksplisit
+- [x] IPC command/event minimal terdaftar
+- [x] Non-goals eksplisit
+- [x] Open questions dipindah ke TDD (tidak memblokir dokumen ini)
+
+---
+
+## VERSION HISTORY
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2026-10-20 | M. Arif Aulia | Initial logic flow — states, transitions, IPC, mapping ke HALAMAN |

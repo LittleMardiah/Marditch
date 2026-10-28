@@ -1,0 +1,31 @@
+================================================================================
+TECHNICAL DEBT REGISTER - WinNotch (Marditch) v1.0
+================================================================================
+Tanggal       : 2026-10-28
+Status        : Aktif
+Proyek        : WinNotch (Ambient Awareness Companion for Windows)
+Versi Dokumen : 1.0
+================================================================================
+
+KONVENSI:
+- ID format: TD-XXX (nomor tiga digit, urut).
+- Status: OPEN (perlu fix), IN PROGRESS, FIXED, CLOSED, DEFERRED
+  (butuh kondisi khusus).
+- Prinsip: hutang yang bisa langsung diselesaikan -> FIX SEKARANG.
+  Hutang yang butuh kondisi khusus -> DEFERRED dengan alasan jelas.
+
+================================================================================
+ENTRY AKTIF
+================================================================================
+
+(Sejauh ini belum ada technical debt tercatat from Phase 0 Prompt 1.)
+
+================================================================================
+VERSION HISTORY
+================================================================================
+| Version | Date       | Author       | Changes                          |
+|---------|------------|--------------|----------------------------------|
+| 1.0     | 2026-10-28 | M. Arif Aulia| Initial register for WinNotch    |
+================================================================================
+END OF TECHNICAL DEBT REGISTER
+================================================================================

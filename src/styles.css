@@ -1,0 +1,23 @@
+/* Phase 0 placeholder - kapsul minimal untuk validasi window */
+body {
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+#capsule {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 180px;
+  height: 32px;
+  background: rgba(20, 20, 24, 0.95);
+  border-radius: 9999px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 13px system-ui;
+}
