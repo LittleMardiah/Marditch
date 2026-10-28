@@ -1,8 +1,3 @@
-// Visual test untuk memastikan klik tembus / berfungsi
-document.getElementById('test-btn').addEventListener('click', () => {
-  console.log("Capsule clicked!");
-  document.getElementById('test-btn').innerText = "Berhasil!";
-  setTimeout(() => {
-    document.getElementById('test-btn').innerText = "Klik Saya";
-  }, 1000);
-});
+// Tauri v2 injects __TAURI__ global if withGlobalTauri is true.
+// We will use it directly in HTML. No extra JS needed here for now.
+console.log("Frontend loaded.");

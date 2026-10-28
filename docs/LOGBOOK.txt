@@ -62,3 +62,16 @@ Apa yang dilakukan:
 
 Catatan:
 - User wajib melakukan T8/T12 (Visual Check & Stress Test).
+
+================================================================================
+PHASE 0 - PROMPT 4 (GOD PROMPT): E4 s/d E10
+================================================================================
+Status: SELESAI (menunggu verifikasi menyeluruh)
+
+Apa yang dilakukan:
+1. E4: Integrasi SMTC (Read & Control) via WinRT. Menambahkan IPC command `media_control`.
+2. E5: CSS Marquee & Hover Animation.
+3. E6: Deteksi Fullscreen via Win32 GetWindowRect. Tray Menu (Show/Hide/Quit).
+4. E7: Foreground Tracking (mencetak judul window aktif).
+5. E8: WSL Hook Axum Server (port 9182) untuk menerima ping async.
+6. E9/E10: Membuat SPIKE_NOTES.md.

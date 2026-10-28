@@ -1,0 +1,13 @@
+================================================================================
+ROADMAP FASE 4 (M4): TIME AWARENESS UI (Anti-Baper)
+================================================================================
+Sesuai PRD v1.3: F034, F035.
+
+TASK BREAKDOWN:
+E4-S1-T1: App Categorization (F035)
+  - DoD: Regex membaca title (IG = Social, Code = Work, Game = Gaming).
+E4-S1-T2: Social Media Tiny Timer (F034)
+  - DoD: Jika di Social Media, ikon berubah jadi timer (20:15). 
+  - 20 menit (putih), 40 menit (oranye), 60 menit (merah + pulse 1x).
+E4-S1-T3: Final Polish (U1-U8 Check)
+  - DoD: Memastikan tidak ada yang curi fokus (U3), tidak ada error state mentah (U5).

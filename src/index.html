@@ -2,14 +2,24 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WinNotch</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div id="capsule">
-    <button id="test-btn">Klik Saya</button>
+    <div class="collapsed-content">
+      <span class="marquee-text">test - Phase 0</span>
+    </div>
+    <div class="expanded-content">
+      <div class="title">Judul Lagu</div>
+      <div class="artist">Nama Artis</div>
+      <div class="controls">
+        <span onclick="window.__TAURI__.core.invoke('media_control', {action: 'prev'})">&#9198;</span>
+        <span onclick="window.__TAURI__.core.invoke('media_control', {action: 'play_pause'})">&#9199;</span>
+        <span onclick="window.__TAURI__.core.invoke('media_control', {action: 'next'})">&#9197;</span>
+      </div>
+    </div>
   </div>
-  <script src="main.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>

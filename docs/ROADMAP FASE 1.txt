@@ -1,0 +1,23 @@
+================================================================================
+ROADMAP FASE 1 (M1): FONDASI & STATE MACHINE DASAR
+================================================================================
+Sesuai PRD v1.3: F001, F002 (termasuk Pin), F007, F018, F030.
+
+TASK BREAKDOWN:
+E1-S1-T1: Window Positioning (F001)
+  - DoD: Notch muncul persis di tengah atas layar.
+E1-S1-T2: Tray Icon & Menu (F007)
+  - DoD: Ikon di system tray bisa diklik kanan (Show/Hide, Reload, Quit).
+E1-S1-T3: Config Manager (F007)
+  - DoD: Membaca config.json saat boot, simpan posisi.
+E1-S1-T4: Sleep/Wake Handling (F018)
+  - DoD: Saat laptop bangun dari sleep, metadata di-reset (tidak ada lagu hantu).
+E1-S2-T5: Foreground Tracking (F030)
+  - DoD: Rust membaca nama proses aktif (GetForegroundWindow) tiap 5 detik.
+E1-S2-T6: Hover Expand & Pin State (F002)
+  - DoD: Hover membesar (S2/S3). Klik kapsul = Pin (S4) agar tidak mengecil saat mouse geser. ESC = lepas Pin.
+
+ACCEPTANCE CRITERIA M1:
+[ ] Notch bisa di-Pin (tidak mengecil saat mouse menjauh).
+[ ] Bisa di-hide/show dari tray.
+[ ] Mengetahui app yang sedang aktif.

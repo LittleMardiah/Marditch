@@ -1,0 +1,17 @@
+================================================================================
+ROADMAP FASE 2 (M2): MEDIA, VISUAL, & WINDOW CONTROL
+================================================================================
+Sesuai PRD v1.3: F003, F008, F011, F012, F020, F022, F023.
+Plus: F039 (Eyes) & F040 (Alive Colors) dari ide User (Kandidat PRD v1.4).
+
+TASK BREAKDOWN:
+E2-S1-T1: SMTC Control & Read (F003)
+  - DoD: Baca metadata, tombol Play/Next berfungsi. Multi-session (pilih yang terbaru).
+E2-S1-T2: Progress Bar & Title Peek (F012, F023)
+  - DoD: Garis durasi lagu. Marquee 1.5s saat lagu ganti.
+E2-S1-T3: The Eyes & Alive Colors (F039, F040 - User Request)
+  - DoD: Mata berkedip & gradien warna bergerak (CSS @keyframes).
+E2-S2-T4: Window Control (F011, F008)
+  - DoD: Fitur Drag (pindah posisi). Auto-hide saat fullscreen (game/nonton).
+E2-S2-T5: DPI, Fullscreen Summary, & Error State (F020, F022, F008-ext)
+  - DoD: Skala pas. Muncul summary setelah keluar fullscreen. Tray abu-abu jika backend crash.

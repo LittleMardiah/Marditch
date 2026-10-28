@@ -1,36 +1,37 @@
-/* E2/E3 - Base Window + Hit-testing Visual */
 html, body {
-  background: transparent;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  width: 100vw;
-  height: 100vh;
-  user-select: none;
+  background: transparent; margin: 0; padding: 0;
+  overflow: hidden; width: 100vw; height: 100vh;
+  user-select: none; font-family: system-ui, sans-serif;
 }
 
 #capsule {
-  position: absolute;
-  top: 8px;
-  left: 50%;
+  position: absolute; top: 8px; left: 50%;
   transform: translateX(-50%);
-  width: 180px;
-  height: 32px;
+  width: 180px; height: 32px;
   background: rgba(20, 20, 24, 0.95);
-  border-radius: 9999px;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 9999px; color: white;
+  display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-button {
-  background: #ff3b30;
-  color: white;
-  border: none;
-  padding: 4px 12px;
-  border-radius: 12px;
-  cursor: pointer;
-  font: 12px system-ui;
+#capsule:hover { width: 320px; height: 80px; border-radius: 24px; }
+.collapsed-content { display: flex; width: 100%; overflow: hidden; justify-content: center; }
+.expanded-content { display: none; opacity: 0; flex-direction: column; align-items: center; }
+#capsule:hover .collapsed-content { display: none; }
+#capsule:hover .expanded-content { display: flex; opacity: 1; }
+
+.title { font-size: 13px; font-weight: 600; }
+.artist { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+.controls { display: flex; gap: 16px; font-size: 16px; cursor: pointer; }
+.controls span:hover { color: #ff3b30; }
+
+/* Marquee Animation */
+.marquee-text {
+  display: inline-block; white-space: nowrap;
+  animation: marquee 1.5s linear infinite;
+}
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
 }

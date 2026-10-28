@@ -1,0 +1,14 @@
+================================================================================
+ROADMAP FASE 3 (M3): ASYNC TASK AWARENESS (WSL Hook)
+================================================================================
+Sesuai PRD v1.3: F031, F032, F033.
+
+TASK BREAKDOWN:
+E3-S1-T1: Session Timer Dasar (F031)
+  - DoD: Menghitung durasi user di suatu aplikasi.
+E3-S1-T2: WSL Hook Listener (F032)
+  - DoD: Axum server di localhost:9182, menerima token auth, terima payload selesai.
+E3-S1-T3: WSL Bash Hook Setup
+  - DoD: Script bash __notch_wrap untuk membungkus command AI/Terminal.
+E3-S1-T4: Async Notify UI (F033)
+  - DoD: Notch memunculkan teks "OpenCode done — 4m 32s" selama 1.5s.
