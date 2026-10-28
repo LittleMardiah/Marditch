@@ -2,26 +2,40 @@ html, body {
   background: transparent; margin: 0; padding: 0;
   overflow: hidden; width: 100vw; height: 100vh;
   user-select: none; font-family: system-ui, sans-serif;
+  pointer-events: none;
 }
 
+/* Alive Colors (F040) */
 #capsule {
   position: absolute; top: 8px; left: 50%;
   transform: translateX(-50%);
   width: 180px; height: 32px;
-  background: rgba(20, 20, 24, 0.95);
   border-radius: 9999px; color: white;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  pointer-events: auto;
+  overflow: hidden;
+  
+  /* Gradient Animasi */
+  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background-size: 400% 400%;
+  animation: gradient 10s ease infinite;
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 #capsule:hover, #capsule.pinned {
   width: 320px; height: 80px; border-radius: 24px;
 }
 
-.collapsed-content { display: flex; width: 100%; overflow: hidden; justify-content: center; }
-.expanded-content { display: none; opacity: 0; flex-direction: column; align-items: center; }
+.collapsed-content { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; position: relative; }
+.expanded-content { display: none; opacity: 0; flex-direction: column; align-items: center; width: 100%; }
 
 #capsule:hover .collapsed-content, #capsule.pinned .collapsed-content { display: none; }
 #capsule:hover .expanded-content, #capsule.pinned .expanded-content { display: flex; opacity: 1; }
@@ -30,14 +44,39 @@ html, body {
   content: '📍'; position: absolute; top: 8px; right: 12px; font-size: 12px;
 }
 
-.title { font-size: 13px; font-weight: 600; }
-.artist { font-size: 11px; color: #aaa; margin-bottom: 4px; }
-.controls { display: flex; gap: 16px; font-size: 16px; cursor: pointer; }
-.controls span:hover { color: #ff3b30; }
+/* The Eyes (F039) */
+.eyes { display: flex; gap: 8px; }
+.eye {
+  width: 12px; height: 12px; background: white; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  animation: blink 4s infinite;
+}
+.pupil { width: 5px; height: 5px; background: #111; border-radius: 50%; }
+@keyframes blink {
+  0%, 96%, 100% { transform: scaleY(1); }
+  98% { transform: scaleY(0.1); }
+}
 
-.marquee-text {
-  display: inline-block; white-space: nowrap;
-  animation: marquee 1.5s linear infinite;
+/* Progress Bar (F012) */
+.progress-container {
+  width: 80%; height: 3px; background: rgba(255,255,255,0.3);
+  border-radius: 2px; margin-top: 6px; margin-bottom: 6px; overflow: hidden;
+}
+.progress-bar { width: 0%; height: 100%; background: white; transition: width 1s linear; }
+
+.title { font-size: 13px; font-weight: 600; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+.artist { font-size: 11px; color: #eee; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+.controls { display: flex; gap: 16px; font-size: 16px; cursor: pointer; }
+.controls span:hover { color: #ff3b30; text-shadow: 0 0 8px rgba(255,255,255,0.8); }
+
+/* Marquee Title Peek (F023) */
+#marquee {
+  position: absolute; white-space: nowrap; font-size: 12px; font-weight: bold;
+  opacity: 0; pointer-events: none;
+}
+#marquee.active {
+  opacity: 1;
+  animation: marquee 1.5s linear;
 }
 @keyframes marquee {
   0% { transform: translateX(100%); }

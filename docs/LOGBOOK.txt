@@ -16,3 +16,15 @@ Apa yang dilakukan:
 2. Foreground: Menerapkan debounce 2 detik agar log terminal tidak spam.
 3. Config: Posisi window disimpan saat CloseRequested.
 4. UI: Teks dummy dihapus, diganti listener event dari Rust.
+
+================================================================================
+FASE 2 (M2) - MEDIA, VISUAL, & WINDOW CONTROL
+================================================================================
+Status: SELESAI
+Apa yang dilakukan:
+1. Alive Colors (F040): Gradien animasi CSS (Merah, Pink, Biru, Hijau).
+2. The Eyes (F039): Mata putih dengan pupil yang berkedip (CSS).
+3. Title Peek (F023): Marquee teks berjalan saat lagu ganti.
+4. Progress Bar (F012): Garis durasi lagu update tiap detik.
+5. Drag Reposition (F011): Native drag Tauri via data-tauri-drag-region.
+6. Fullscreen (F008): Deteksi aman via state-check (tidak spam hide/show).

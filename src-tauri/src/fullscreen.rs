@@ -7,8 +7,10 @@ use tauri::{AppHandle, Manager};
 pub fn start_polling(app: AppHandle) {
     thread::spawn(move || {
         let window = app.get_webview_window("main").unwrap();
+        let mut last_state = false;
+        
         loop {
-            thread::sleep(Duration::from_millis(500));
+            thread::sleep(Duration::from_secs(2)); // Aman: 2 detik
             unsafe {
                 let hwnd = GetForegroundWindow();
                 if hwnd.0 != std::ptr::null_mut() {
@@ -19,12 +21,16 @@ pub fn start_polling(app: AppHandle) {
                         let win_w = rect.right - rect.left;
                         let win_h = rect.bottom - rect.top;
                         
-                        // Jika window foreground menutupi seluruh layar, anggap fullscreen
                         let is_fs = win_w >= screen_w && win_h >= screen_h;
-                        if is_fs {
-                            let _ = window.hide();
-                        } else {
-                            let _ = window.show();
+                        
+                        // Hanya eksekusi jika status berubah (Anti-Crash)
+                        if is_fs != last_state {
+                            last_state = is_fs;
+                            if is_fs {
+                                let _ = window.hide();
+                            } else {
+                                let _ = window.show();
+                            }
                         }
                     }
                 }

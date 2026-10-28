@@ -14,15 +14,26 @@ pub fn start_listening(app: AppHandle) {
                 if let Ok(media_props) = session.TryGetMediaPropertiesAsync().unwrap().get() {
                     let title = media_props.Title().unwrap_or_default().to_string();
                     let artist = media_props.Artist().unwrap_or_default().to_string();
+                    
+                    if !title.is_empty() {
+                        // Trigger Title Peek (F023)
+                        if title != last_title {
+                            last_title = title.clone();
+                            let _ = app.emit("smtc_title_changed", serde_json::json!({ "title": title }));
+                        }
 
-                    if !title.is_empty() && title != last_title {
-                        last_title = title.clone();
-                        let payload = serde_json::json!({
-                            "title": title,
-                            "artist": artist
-                        });
-                        let _ = app.emit("smtc_update", payload);
-                        println!("[SMTC] Update Sent: {} - {}", title, artist);
+                        // Progress Bar (F012)
+                        if let Ok(timeline) = session.GetTimelineProperties() {
+                            let pos = timeline.Position().unwrap_or_default().Duration;
+                            let end = timeline.EndTime().unwrap_or_default().Duration;
+                            let payload = serde_json::json!({
+                                "title": title,
+                                "artist": artist,
+                                "position_ms": pos / 10000,
+                                "duration_ms": end / 10000
+                            });
+                            let _ = app.emit("smtc_update", payload);
+                        }
                     }
                 }
             }

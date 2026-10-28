@@ -5,14 +5,21 @@
   <title>WinNotch</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <div id="capsule" onclick="togglePin(event)">
-    <div class="collapsed-content">
-      <span class="marquee-text">♪</span>
+<body data-tauri-drag-region>
+  <div id="capsule" onclick="togglePin(event)" data-tauri-drag-region>
+    <div class="collapsed-content" data-tauri-drag-region>
+      <div class="eyes" data-tauri-drag-region>
+        <div class="eye" data-tauri-drag-region><div class="pupil" data-tauri-drag-region></div></div>
+        <div class="eye" data-tauri-drag-region><div class="pupil" data-tauri-drag-region></div></div>
+      </div>
+      <span id="marquee" class="marquee-text"></span>
     </div>
     <div class="expanded-content">
       <div class="title">Menunggu Musik...</div>
       <div class="artist">-</div>
+      <div class="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
       <div class="controls">
         <span onclick="event.stopPropagation(); window.__TAURI__.core.invoke('media_control', {action: 'prev'})">&#9198;</span>
         <span onclick="event.stopPropagation(); window.__TAURI__.core.invoke('media_control', {action: 'play_pause'})">&#9199;</span>

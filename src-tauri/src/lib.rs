@@ -3,7 +3,7 @@ mod foreground;
 mod wsl_hook;
 mod config;
 // mod hit_test; // DISABLED: Menyebabkan crash
-// mod fullscreen; // DISABLED: Menyebabkan crash
+mod fullscreen;
 
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::TrayIconBuilder;
@@ -42,7 +42,7 @@ pub fn run() {
 
             // hit_test::start_polling(handle.clone()); // DISABLED
             smtc::start_listening(handle.clone());
-            // fullscreen::start_polling(handle.clone()); // DISABLED
+            fullscreen::start_polling(handle.clone());
             foreground::start_polling();
             wsl_hook::start_server();
 
