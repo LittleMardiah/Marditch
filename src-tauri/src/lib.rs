@@ -53,7 +53,18 @@ pub fn run() {
             let _tray = TrayIconBuilder::new()
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
-                    "quit" => std::process::exit(0),
+                    "quit" => {
+                        let app_handle = app.app_handle();
+                        let mut cfg = config::load_config(app_handle);
+                        if let Some(win) = app.get_webview_window("main") {
+                            if let Ok(pos) = win.outer_position() {
+                                cfg.window_x = Some(pos.x);
+                                cfg.window_y = Some(pos.y);
+                                config::save_config(app_handle, &cfg);
+                            }
+                        }
+                        std::process::exit(0);
+                    }
                     "show" => {
                         let win = app.get_webview_window("main").unwrap();
                         if win.is_visible().unwrap() { let _ = win.hide(); } 
