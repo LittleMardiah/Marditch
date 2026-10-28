@@ -43,3 +43,22 @@ Referensi:
 - docs/ROADMAP FASE 0.txt (E1-S1-T1 sampai T5)
 - docs/PRD.txt v1.3 (PART C §C1 Tech Stack)
 - docs/TEAM_CONTRACT.txt v1.0
+
+================================================================================
+PHASE 0 - PROMPT 2 (MEGA): E2 Base Window + E3 Hit-testing
+================================================================================
+Status: SELESAI (menunggu user verifikasi T8 & T12)
+
+Apa yang dilakukan:
+1. Window Tauri diperbesar (400x120) agar kapsul bisa berekspansi tanpa resize window.
+2. Config diset: transparent, frameless, always_on_top, focus false.
+3. Menambahkan crate `windows` (Win32) di Cargo.toml.
+4. Membuat `hit_test.rs` menggunakan Option A (Polling):
+   - Thread Rust berjalan setiap 16ms.
+   - Cek posisi kursor relatif terhadap area kapsul (180x32).
+   - Jika di luar kapsul -> click-through aktif.
+   - Jika di dalam kapsul -> click-through mati (bisa diklik).
+5. Frontend: Menambahkan tombol dummy untuk ngetes klik tembus.
+
+Catatan:
+- User wajib melakukan T8/T12 (Visual Check & Stress Test).

@@ -1,13 +1,16 @@
-/* Phase 0 placeholder - kapsul minimal untuk validasi window */
-body {
+/* E2/E3 - Base Window + Hit-testing Visual */
+html, body {
   background: transparent;
   margin: 0;
   padding: 0;
   overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  user-select: none;
 }
 
 #capsule {
-  position: fixed;
+  position: absolute;
   top: 8px;
   left: 50%;
   transform: translateX(-50%);
@@ -19,5 +22,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font: 13px system-ui;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+button {
+  background: #ff3b30;
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font: 12px system-ui;
 }
