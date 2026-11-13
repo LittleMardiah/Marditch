@@ -2,12 +2,11 @@ mod smtc;
 mod foreground;
 mod wsl_hook;
 mod config;
-// mod hit_test; // DISABLED: Menyebabkan crash
 mod fullscreen;
 
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::TrayIconBuilder;
-use tauri::{Manager, PhysicalPosition};
+use tauri::{Manager, PhysicalPosition, WindowEvent};
 
 #[tauri::command]
 fn media_control(action: String) { smtc::control(&action); }
@@ -25,7 +24,7 @@ pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             let handle = app.handle().clone();
-            
+
             let cfg = config::load_config(&handle);
             if let Some(win) = app.get_webview_window("main") {
                 if let (Some(x), Some(y)) = (cfg.window_x, cfg.window_y) {
@@ -40,11 +39,10 @@ pub fn run() {
                 }
             }
 
-            // hit_test::start_polling(handle.clone()); // DISABLED
             smtc::start_listening(handle.clone());
+            foreground::start_polling(handle.clone());
+            wsl_hook::start_server(handle.clone());
             fullscreen::start_polling(handle.clone());
-            foreground::start_polling();
-            wsl_hook::start_server();
 
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Show/Hide", true, None::<&str>)?;
@@ -64,10 +62,10 @@ pub fn run() {
                             }
                         }
                         std::process::exit(0);
-                    }
+                    },
                     "show" => {
                         let win = app.get_webview_window("main").unwrap();
-                        if win.is_visible().unwrap() { let _ = win.hide(); } 
+                        if win.is_visible().unwrap() { let _ = win.hide(); }
                         else { let _ = win.show(); }
                     }
                     _ => {}
@@ -75,9 +73,8 @@ pub fn run() {
                 .build(app)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![media_control, save_window_pos])
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { .. } = event {
+            if let WindowEvent::CloseRequested { .. } = event {
                 let app = window.app_handle();
                 let mut cfg = config::load_config(app);
                 if let Ok(pos) = window.outer_position() {
@@ -87,6 +84,7 @@ pub fn run() {
                 }
             }
         })
+        .invoke_handler(tauri::generate_handler![media_control, save_window_pos])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

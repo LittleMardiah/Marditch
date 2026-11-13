@@ -28,3 +28,46 @@ Apa yang dilakukan:
 4. Progress Bar (F012): Garis durasi lagu update tiap detik.
 5. Drag Reposition (F011): Native drag Tauri via data-tauri-drag-region.
 6. Fullscreen (F008): Deteksi aman via state-check (tidak spam hide/show).
+
+================================================================================
+FASE 1, 2, 3, & 4 - FULL INTEGRATION (GOD MODE MEGA PROMPT)
+Timestamp: 2026-11-13 10:57:38 WIB
+Status: SELESAI (belum di-build - target Windows, sesi berjalan di Linux)
+================================================================================
+Apa yang dilakukan (rewrite UTUH, tanpa truncation):
+1. config.rs - AppConfig (window_x, window_y, is_pinned, first_run) +
+   load/save di app_data_dir, sudah sesuai spesifikasi (tidak berubah).
+2. smtc.rs - Emit `smtc_title_changed` (Title Peek F023) dan `smtc_update`
+   (title, artist, position_ms, duration_ms) tiap 1 detik; media_control
+   play_pause/next/prev.
+3. foreground.rs - Poll GetForegroundWindow 1 detik, emit `time_tick`
+   (title, is_social, time_spent). Contoh: title hitung detik stabil.
+4. wsl_hook.rs - Axum server 127.0.0.1:9182, POST /notch/notify,
+   emit `async_task_complete` (source, duration_seconds, exit_code).
+5. lib.rs - Init tray (Show/Hide + Quit), restore posisi window dari
+   config, fallback posisi top-center, start keempat thread, simpan posisi
+   saat CloseRequested. Logika hide/show HANYA di event tray (bukan loop).
+6. index.html - Tambah `#tiny-timer` dan `#async-notify`.
+7. styles.css - Timer sosial (normal/warning/danger + pulse) dan overlay
+   notifikasi async, tetap gradient + eyes + marquee lama.
+8. main.js - Listener `time_tick` (20/40/60 menit threshold) dan
+   `async_task_complete` (tampil 4 detik), pin + ESC tetap.
+9. docs/wsl_hook_setup.sh - Wrapper `notch_wrap` baru: catat durasi,
+   kirim JSON ke localhost:9182, skip task < 10 detik, tidak pernah
+   menggagalkan command yang dibungkus.
+
+Anti-Crash compliance:
+- window.hide()/show() hanya pada event tray, tidak di polling loop.
+- fullscreen.rs tetap memakai state-check (is_fs != last_state).
+
+Verifikasi:
+- `node --check src/main.js` -> OK.
+- File ditulis ulang penuh (bukan patch).
+- Build Windows belum dijalankan: crate `windows` butuh target Windows.
+
+Catatan / Technical Debt:
+- wsl_hook belum pakai token auth (PRD A9/C6 mewajibkan token auth).
+  Payload sesuai prompt saat ini hanya source/duration_seconds/exit_code.
+  -> catat sebagai TD sebelum rilis.
+- Threshold timer masih hardcode 2400/3600 detik di main.js, belum
+  configurable dari config.json (PRD US5).
